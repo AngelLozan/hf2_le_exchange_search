@@ -1,0 +1,25 @@
+.env
+node_modules/
+user_data/
+.DS_Store
+.cache
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.prod.prod
+.env.dev
+
+.compose.env
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+compose.env
+Dockerfile.dev
+distSave/
+
