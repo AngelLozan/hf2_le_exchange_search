@@ -4,10 +4,11 @@ A little automation for the Hack Force II team.
 
 ![image](./assets/hf2_recursive_exchange_search.png)
 
-
-Search by address can be done via API but I believe the currency has to be included as well in order to return the results. You can't define a time range via API, it'll just give you all that matches. It has to include the fromAsset or the toAsset. FYI we don’t always receive the asset with the address. This will effect searching for EVM and TRX addresses.
-
-We’ll get all assets that match the address (ETH, BNB, TRX, USDT). I think there are some ways we can work around this (eg. searching for common assets).
+### Basic info and calls
+- Search by address can be done via API but I believe the currency has to be included as well in order to return the results. 
+- You can't define a time range via API, it'll just give you all that matches. 
+- It has to include the fromAsset or the toAsset. 
+- We don’t always receive the asset with the address. This will effect searching for EVM and TRX addresses. We’ll get all assets that match the address (ETH, BNB, TRX, USDT). 
 
 https://exchange.exodus.io/v3/orders?toAddress=31muhDdxQEE7E2MUUF3qunAKr4NR4Tn1Qy&toAsset=BTC
 

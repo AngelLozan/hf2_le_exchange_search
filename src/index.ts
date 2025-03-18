@@ -41,18 +41,70 @@ type SwapData = {
   clientVer:string;
 };
 
-// Search original address
+
+// Search original address, need to identify sometimes which asset it represents (ie. ETH, BNB, TRX, USDT), use cryptoregex
+
+// Search by address can be done via API but I believe the currency has to be included as well in order to return the results. 
+// You can't define a time range via API, it'll just give you all that matches. 
+// It has to include the fromAsset or the toAsset. 
+// We don’t always receive the asset with the address. This will effect searching for EVM and TRX addresses.
+// We’ll get all assets that match the address (ETH, BNB, TRX, USDT). 
+
+const addresses: string[] = []; 
 
 // Put additional addresses from swap pair. Add to sheet 1
+const writerAddress = csvWriter.createObjectCsvWriter({
+  path: path.resolve(__dirname, 'sheet1.csv'),
+  header: [
+    { "id": "address", "title": "Address" }
+  ],
+});
 
-// Get swap data from api 👇🏿
-
+const addressRecordWriter = async (event: any, _addresses: string[]) => {
+	await writerAddress.writeRecords(_addresses);
+	console.log("Done writing Sheet 1 with address data. ✅");
+	logger.info("Done writing Sheet 1 with address data.");
+	
+};
 
 const swaps: SwapData[] = [
   // { xxxx: 'xxxxx', yyyyy: 'yyyyyy', ddddd: 'ddddd', pppp: 222222 }, Example, array of hashes
 ];
 
-const writer = csvWriter.createObjectCsvWriter({
+
+// Get swap data from api
+const fetchSwapData = async (_address: string, _currency: string) => {
+	// https://exchange.exodus.io/v3/orders?toAddress=31muhDdxQEE7E2MUUF3qunAKr4NR4Tn1Qy&toAsset=BTC
+	// https://exchange.exodus.io/v3/orders?fromAddress=addr1q84x3qh7e0q6fldmj5mnk89vjlvgncsw5g9dmxmel4qt00j04mm39fw8l4pewc59xl59v7zszwye9vhuh3zwft8e5j9sslflq0&fromAsset=ADA
+
+	// How to decide if it's to or from? 
+	try {
+        let response = await fetch("https://api.zerofox.com/2.0/threat_submit/", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0", 
+                "App-Name": "hf2_le_exchange_search",
+				"App-Version": "1.0.0"
+            }
+        });
+
+        if(response.status !== 200){
+        	console.log("Swap or data not found");
+        	logger.info("Swap or data not found");
+        } else {
+	 		let data = await response.json()
+        	console.log(data);
+	        logger.info(data as JSON);
+	        swaps.push(data);
+        }
+    } catch (error: any) {
+        console.log("Something went wrong with that call", error.message);
+        logger.info(error.message);
+    }
+};
+
+const writerSwap = csvWriter.createObjectCsvWriter({
   path: path.resolve(__dirname, 'sheet2.csv'),
   header: [
     { "id": "createdAt", "title": "Created At" },
@@ -86,13 +138,13 @@ const writer = csvWriter.createObjectCsvWriter({
   ],
 });
 
-const recordWriter = async (event: any, _swaps: SwapData[]) => {
-	await writer.writeRecords(_swaps);
+const swapsRecordWriter = async (event: any, _swaps: SwapData[]) => {
+	await writerSwap.writeRecords(_swaps);
 	console.log("Done writing Sheet 2 with swap data. ✅");
 	logger.info("Done writing Sheet 2 with swap data.");
 	
 };
 
-
+// TO DO: Recursion
 
 
