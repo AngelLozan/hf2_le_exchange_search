@@ -52,7 +52,6 @@ const swaps: SwapData[] = [
   // { xxxx: 'xxxxx', yyyyy: 'yyyyyy', ddddd: 'ddddd', pppp: 222222 }, Example, array of hashes
 ];
 
-
 const writer = csvWriter.createObjectCsvWriter({
   path: path.resolve(__dirname, 'sheet2.csv'),
   header: [
