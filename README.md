@@ -10,6 +10,8 @@ A little automation for the Hack Force II team.
 - It has to include the fromAsset or the toAsset. 
 - We don’t always receive the asset with the address. This will effect searching for EVM and TRX addresses. We’ll get all assets that match the address (ETH, BNB, TRX, USDT). 
 
+- Match `TO ADDRESS` to `TO CURRENCY` & `FROM ADDRESS` to `FROM CURRENCY`
+
 https://exchange.exodus.io/v3/orders?toAddress=31muhDdxQEE7E2MUUF3qunAKr4NR4Tn1Qy&toAsset=BTC
 
 https://exchange.exodus.io/v3/orders?fromAddress=addr1q84x3qh7e0q6fldmj5mnk89vjlvgncsw5g9dmxmel4qt00j04mm39fw8l4pewc59xl59v7zszwye9vhuh3zwft8e5j9sslflq0&fromAsset=ADA

@@ -13,7 +13,7 @@ const Search = async (_address: string) => {
            return "algo";
         } else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
             //@dev EVM address
-           return true;
+           return ["eth", "usdt", "bnb"];
         } else if (/^r[1-9A-HJ-NP-Za-km-z]{25,33}$/g.test(source)) {
             //@dev XRP address
             return "xrp";
@@ -23,9 +23,6 @@ const Search = async (_address: string) => {
         }  else if (/^(cosmos)[a-z0-9]{39}$/g.test(source)) {
             //@dev Atom Address
             return "atom";
-        } else if (/^(bnb1)[a-z0-9]{38}$/g.test(source)) {
-            //@dev BNB Beacon Address
-           return "beacon";
         } else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
             //@dev TRX address
             return "trx";
@@ -47,20 +44,50 @@ const Search = async (_address: string) => {
         } else if (/^(terra1)[a-z0-9A-Z]{38}$/g.test(source)) {
             //@dev LUNC address.
             return "lunc";
-        } else if (
-            /^grs[a-zA-Z0-9]{5,88}$|^F[a-km-zA-HJ-NP-Z1-9]{26,33}$|^G[A-Z0-9]{55}$|^ltc[a-zA-Z0-9]{5,88}$|^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$|^[7X][a-km-zA-HJ-NP-Z1-9]{26,33}$|^[9AD][a-km-zA-HJ-NP-Z1-9]{26,33}$|^([qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120}|(bitcoincash)?[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120})$|^bc(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87})$|^1[a-km-zA-HJ-NP-Z1-9]{25,34}(?!\/)$|^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/g.test(
-                source
-            )
-        ) {
-            // TO DO: Break into separate regexs to return specific asset. Most chains addresses. Needs to stay last so other regex's work. Includes LTC, XLM, DASH, DOGE, XMR, BCH and BTC derivations.
-            return true;
+        } else if (/^ltc[a-zA-Z0-9]{5,88}$/g.test(source)) {
+            //@dev LTC address.
+            return "ltc";
+        } else if (/^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$|^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/g.test(source)) {
+            //@dev XLM address.
+            return "xlm";
+        } else if (/^bc(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87})$|^1[a-km-zA-HJ-NP-Z1-9]{25,34}(?!\/)$|^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/g.test(source)) {
+            //@dev BTC address.
+            return "btc";
+        } else if (/^([qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120}|(bitcoincash)?[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120})$/g.test(source)) {
+            //@dev BCH address.
+            return "bch";
+        } else if (/^grs[a-zA-Z0-9]{5,88}$/g.test(source)) {
+            //@dev GRS address.
+            return "grs";
+        } else if (/^X[a-km-zA-HJ-NP-Z1-9]{26,33}$|^7[a-km-zA-HJ-NP-Z1-9]{26,33}$/g.test(source)) {
+            //@dev DASH address.
+            return "dash";
+        } else if (/^D[a-km-zA-HJ-NP-Z1-9]{26,33}$/g.test(source)) {
+            //@dev DOGE address.
+            return "doge";
+        } else if (/^t1[a-zA-Z0-9]{33}$/g.test(source)) {
+            //@dev ZEC address.
+            return "zec";
+        } else if (/^r[0-9a-zA-Z]{24,34}$/g.test(source)) {
+            //@dev XRP address.
+            return "xrp";
         } else {
-            return false;
+            return "Not Found";
         }
     };
 
 
 module.exports = { Search }
 
-
+// else if (/^(bnb)[a-z0-9]{38}$/g.test(source)) {
+//             //@dev BNB Beacon Address
+//            return "bnb";
+//         } else if (
+        //     /^grs[a-zA-Z0-9]{5,88}$|^F[a-km-zA-HJ-NP-Z1-9]{26,33}$|^G[A-Z0-9]{55}$|^[7X][a-km-zA-HJ-NP-Z1-9]{26,33}$|^[9AD][a-km-zA-HJ-NP-Z1-9]{26,33}$|^([qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120}|(bitcoincash)?[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120})$|^bc(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87})$|^1[a-km-zA-HJ-NP-Z1-9]{25,34}(?!\/)$|^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/g.test(
+        //         source
+        //     )
+        // ) {
+        //     // TO DO: Break into separate regexs to return specific asset. Most chains addresses. Needs to stay last so other regex's work. Includes DASH, DOGE, XMR, BCH and BTC derivations.
+        //     return true;
+        // } 
 
