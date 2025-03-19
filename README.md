@@ -4,7 +4,7 @@ A little automation for the Hack Force II team.
 
 ![image](./assets/hf2_recursive_exchange_search.png)
 
-### Basic info and calls
+### Basic info and requirement
 - Search by address can be done via API but I believe the currency has to be included as well in order to return the results. 
 - You can't define a time range via API, it'll just give you all that matches. 
 - It has to include the fromAsset or the toAsset. 
@@ -22,3 +22,11 @@ curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Fire
 --header 'App-Name: scott-test' \
 --header 'App-Version: 1' | fx .
 ```
+
+
+### Usage:
+
+```zsh
+npm start
+```
+

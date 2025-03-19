@@ -1,11 +1,6 @@
-// import cors from "cors";
-// import fs from "fs";
-// import { createObjectCsvStringifier } from 'csv-writer';
-// import * as path from 'path';
 const csvWriter = require('csv-writer');
 const { Search } = require("./cryptoregex");
 import path from 'path';
-// import { Readable } from 'stream';
 import pino from 'pino';
 const logger = pino();
 
@@ -129,7 +124,7 @@ const baseFetch = async (_url: string) => {
 
 
 // Get swap data from api
-const fetchSwapData = async (_toAddress: string = null, _fromAddress: string = null, _toCurrency: string = null, _fromCurrency: string = null) => {
+export const fetchSwapData = async (_toAddress: string = null, _fromAddress: string = null, _toCurrency: string = null, _fromCurrency: string = null) => {
 	const baseUrl = 'https://exchange.exodus.io/v3/orders';
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
@@ -228,7 +223,21 @@ const fetchSwapData = async (_toAddress: string = null, _fromAddress: string = n
     }
 };
 
+async function main() {
+    const args = process.argv.slice(2); // Remove first two elements (node path and script path)
 
+    if (args.length < 4) {
+        console.error("Usage: node dist/index.js <toAddress> <fromAddress> <toCurrency> <fromCurrency>");
+        process.exit(1);
+    }
 
+    const [_toAddress, _fromAddress, _toCurrency, _fromCurrency] = args;
+
+    await fetchSwapData(_toAddress, _fromAddress, _toCurrency, _fromCurrency);
+}
+
+if (require.main === module) {
+    main();
+}
 
 
