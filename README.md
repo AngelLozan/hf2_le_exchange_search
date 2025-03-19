@@ -27,6 +27,6 @@ curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Fire
 ### Usage:
 
 ```zsh
-npm start
+npm start <toAddress> <fromAddress> <toCurrency> <fromCurrency>
 ```
 

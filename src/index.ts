@@ -223,8 +223,10 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
     }
 };
 
+
 async function main() {
-    const args = process.argv.slice(2); // Remove first two elements (node path and script path)
+	// Remove first two elements ('npm start')
+    const args = process.argv.slice(2);
 
     if (args.length < 4) {
         console.error("Usage: node dist/index.js <toAddress> <fromAddress> <toCurrency> <fromCurrency>");
