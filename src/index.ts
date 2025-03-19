@@ -77,9 +77,9 @@ const fetchSwapData = async (_address: string, _currency: string) => {
 	// https://exchange.exodus.io/v3/orders?toAddress=31muhDdxQEE7E2MUUF3qunAKr4NR4Tn1Qy&toAsset=BTC
 	// https://exchange.exodus.io/v3/orders?fromAddress=addr1q84x3qh7e0q6fldmj5mnk89vjlvgncsw5g9dmxmel4qt00j04mm39fw8l4pewc59xl59v7zszwye9vhuh3zwft8e5j9sslflq0&fromAsset=ADA
 
-	// How to decide if it's to or from? 
+	// TO DO How to decide if it's to or from? 
 	try {
-        let response = await fetch("https://api.zerofox.com/2.0/threat_submit/", {
+        let response = await fetch("TO DO", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -96,7 +96,18 @@ const fetchSwapData = async (_address: string, _currency: string) => {
 	 		let data = await response.json()
         	console.log(data);
 	        logger.info(data as JSON);
-	        swaps.push(data);
+	        swaps.push(data as SwapData);
+
+	        if (data.toAddr && data.fromAddr){
+	        	const addys: string[] = [ data.toAddr, data.fromAddr ];
+	        	// TO DO Use search to identify the asset? Use to/from in data to determine based on what is decided on url. 👆
+
+	        	addys.forEach((add) => fetchSwapData(add, data.))
+	        } else if (data.toAddr && !data.fromAddr){
+
+	        } else if (data.toAddr && !data.fromAddr){
+
+	        }
         }
     } catch (error: any) {
         console.log("Something went wrong with that call", error.message);
