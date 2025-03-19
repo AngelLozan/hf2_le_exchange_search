@@ -124,7 +124,7 @@ const baseFetch = async (_url: string) => {
 
 
 // Get swap data from api
-export const fetchSwapData = async (_toAddress: string = null, _fromAddress: string = null, _toCurrency: string = null, _fromCurrency: string = null) => {
+export const fetchSwapData = async (_toAddress: string | null = null, _fromAddress: string | null = null, _toCurrency: string | null = null, _fromCurrency: string | null = null) => {
 	const baseUrl = 'https://exchange.exodus.io/v3/orders';
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
@@ -134,16 +134,16 @@ export const fetchSwapData = async (_toAddress: string = null, _fromAddress: str
 	// If currency is null, then need to use cryptoregex to determine based on address
 	if(_toCurrency === null && _toAddress !== null){
 		const toCoin = await Search(_toAddress);
-		toCurrency.push(coin);
+		toCurrency.push(toCoin);
 	} else {
-		toCurrency.push(_toCurrency);
+		if(_toCurrency !== null) toCurrency.push(_toCurrency);
 	}
 
 	if(_fromCurrency === null && _fromAddress !== null){
 		const fromCoin = await Search(_fromAddress);
 		fromCurrency.push(fromCoin);
 	} else {
-		fromCurrency.push(_fromCurrency);
+		if(_fromCurrency !== null) fromCurrency.push(_fromCurrency);
 	}
 
 	let addresses: string[] = [];
@@ -157,16 +157,16 @@ export const fetchSwapData = async (_toAddress: string = null, _fromAddress: str
 		*/
 
 		if(toCurrency.length === 1 && fromCurrency.length === 1 ){
-			if (fromAddr) requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddr}&fromAsset=${_fromCurrency}`));
-    		if (toAddr) requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddr}&toAsset=${_toCurrency}`));
+			if (_fromAddress) requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddress}&fromAsset=${_fromCurrency}`));
+    		if (_fromAddress) requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddress}&toAsset=${_toCurrency}`));
 		} else {
 			//Handle multiple currencies with multiple requests
 			toCurrency.forEach((tCoin) => {
-				if(tCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddr}&toAsset=${tCoin}`));
+				if(tCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddress}&toAsset=${tCoin}`));
 			});
 
 			fromCurrency.forEach((fCoin) => {
-				if(fCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddr}&fromAsset=${fCoin}`));
+				if(fCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddress}&fromAsset=${fCoin}`));
 			});
 		}
         
