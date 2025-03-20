@@ -129,6 +129,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         }
         const responses = yield Promise.all(requests);
         const dataArrays = yield Promise.all(responses.map(res => res.status === 200 ? res.json() : console.log("\n\n Swap data not found. \n\n")));
+        console.log("\n\n DATA ARRAYS: ", dataArrays);
         const mergedData = Object.values(dataArrays.flat().reduce((acc, item) => {
             acc[item.oid] = item;
             return acc;

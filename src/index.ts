@@ -7,7 +7,7 @@ const logger = pino();
 
 type SwapData = {
   createdAt:string;	
-  oid:string;	
+  providerOrderId:string;	
   svc:string;	
   pair:string;
   fromAddr:string;	
@@ -36,6 +36,25 @@ type SwapData = {
   clientVer:string;
 };
 
+// TO DO: Adapt appropriate type and reduce by providerOrderId
+
+// {
+//       amount: [Object],
+//       toAmount: [Object],
+//       createdAt: '2025-01-07T23:44:55.761Z',
+//       fromAddress: 'TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP',
+//       fromTransactionId: '930c661659bba2ca5bb6016c94ae7689561ba2e99e5fc7551fdc3a37070c5d02',
+//       id: 'Gb0D8dyX0MeN3eE',
+//       message: '',
+//       pairId: 'USDTTRX_TRX',
+//       payInAddress: 'TLeXWADfVXwaB7DiFCgqAG7MURPSK9mkGp',
+//       providerOrderId: '0dxq0x9sshv05gt1mg',
+//       rateId: '67216e32-d973-4acc-8aa1-3581551fbb94',
+//       toAddress: 'TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP',
+//       toTransactionId: 'ea52148a9b25d0ddaba55d679615d88a9e5ec98224c1c35f08d772b0cdf79ae5',
+//       updatedAt: '2025-01-07T23:48:53.649Z',
+//       status: 'complete'
+//     },
 
 // Search original address, need to identify sometimes which asset it represents (ie. ETH, BNB, TRX, USDT), use cryptoregex
 // Search by address can be done via API but I believe the currency has to be included as well in order to return the results. 
@@ -65,7 +84,7 @@ const writerSwap = csvWriter.createObjectCsvWriter({
   path: path.resolve(__dirname, 'sheet2.csv'),
   header: [
     { "id": "createdAt", "title": "Created At" },
-    { "id": "oid", "title": "Order ID" },
+    { "id": "providerOrderId", "title": "Order ID" },
     { "id": "svc", "title": "Service" },
     { "id": "pair", "title": "Pair" },
     { "id": "fromAddr", "title": "From Address" },
@@ -174,6 +193,8 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
     	const responses = await Promise.all(requests);
     	const dataArrays = await Promise.all(responses.map(res => res!.status === 200 ? res!.json() : console.log("\n\n Swap data not found. \n\n")));
 
+    	console.log("\n\n DATA ARRAYS: ", dataArrays);
+
     	/* Array of unique SwapData objects based on the oid field.
     		Example:
     	    const swaps: SwapData[] = [
@@ -181,7 +202,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		     { xxxx: 'xxxxx', yyyyy: 'yyyyyy', ddddd: 'ddddd', pppp: 222222 },
 			];
 		*/
-    	const mergedData: SwapData[]  = Object.values(
+    	const mergedData: SwapData[] = Object.values(
 	        dataArrays.flat().reduce((acc, item) => {
 	            acc[item.oid] = item;
 	            return acc;
