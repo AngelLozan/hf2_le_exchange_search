@@ -147,7 +147,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 	}
 
 	let addresses: string[] = [];
-	let requests: JSON[] = [];
+	let requests: Promise<Response | undefined>[] = [];
 
 	try {
 		/*
@@ -172,7 +172,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
         
 
     	const responses = await Promise.all(requests);
-    	const dataArrays = await Promise.all(responses.map(res => res.status === 200 ? res.json() : console.log("\n\n Swap data not found. \n\n")));
+    	const dataArrays = await Promise.all(responses.map(res => res!.status === 200 ? res!.json() : console.log("\n\n Swap data not found. \n\n")));
 
     	/* Array of unique SwapData objects based on the oid field.
     		Example:
@@ -181,7 +181,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		     { xxxx: 'xxxxx', yyyyy: 'yyyyyy', ddddd: 'ddddd', pppp: 222222 },
 			];
 		*/
-    	const mergedData = Object.values(
+    	const mergedData: SwapData[]  = Object.values(
 	        dataArrays.flat().reduce((acc, item) => {
 	            acc[item.oid] = item;
 	            return acc;
@@ -192,29 +192,29 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 	    await swapsRecordWriter(mergedData);
 
 	    // Add addresses to sheet 1 & recursive search
-    	mergedData.forEach((data) => {
-    		// If address exists in each data hash, push it to the sheet
-    		if(data.!toAddr !== null && data!.toAddr !== '' && data!.toAddr !== undefined && !addresses.includes(data!.toAddr)){
-				addresses.push[data.toAddr];
-	     	}
-	     	if(data.!fromAddr !== null && data!.fromAddr !== '' && data!.fromAddr !== undefined && !addresses.includes(data!.fromAddr)){
-	     		addresses.push[data.fromAddr]
-	     	}
-	
-			// Figure out recursion. 
-	     	if (data.toAddr && data.fromAddr){
-	        	await fetchSwapData(data.toAddr, data.fromAddr, data.to, data.from);
-	        } else if (data.toAddr && !data.fromAddr){
-				await fetchSwapData(data.toAddr, null, data.to, null);
-	        } else if (!data.toAddr && data.fromAddr){
-				await fetchSwapData(null, data.fromAddr, null, data.from);
-	        } else {
-	        	// Write addresses if no more pairs found
-	        	console.log("No more remaining pairs");
-	        	logger.info("No more remaining pairs");
-	        	await addressRecordWriter(addresses);
-	        }
-    	});
+    	for (const data of mergedData) {
+		    // If address exists in each data hash, push it to the sheet
+		    if (data.toAddr !== null && data.toAddr !== '' && data.toAddr !== undefined && !addresses.includes(data.toAddr)) {
+		        addresses.push(data.toAddr);
+		    }
+		    if (data.fromAddr !== null && data.fromAddr !== '' && data.fromAddr !== undefined && !addresses.includes(data.fromAddr)) {
+		        addresses.push(data.fromAddr);
+		    }
+
+		    // Figure out recursion
+		    if (data.toAddr && data.fromAddr) {
+		        await fetchSwapData(data.toAddr, data.fromAddr, data.to, data.from);
+		    } else if (data.toAddr && !data.fromAddr) {
+		        await fetchSwapData(data.toAddr, null, data.to, null);
+		    } else if (!data.toAddr && data.fromAddr) {
+		        await fetchSwapData(null, data.fromAddr, null, data.from);
+		    } else {
+		        console.log("No more remaining pairs");
+		        logger.info("No more remaining pairs");
+		        await addressRecordWriter(addresses);
+		    }
+		}
+
 
     } catch (error: any) {
         console.log("Something went wrong with that call", error.message);
