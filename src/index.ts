@@ -157,8 +157,8 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		*/
 
 		if(toCurrency.length === 1 && fromCurrency.length === 1 ){
-			if (_fromAddress) requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddress}&fromAsset=${_fromCurrency}`));
-    		if (_fromAddress) requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddress}&toAsset=${_toCurrency}`));
+			if (_fromAddress) requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${_fromCurrency}`));
+    		if (_fromAddress) requests.push(baseFetch(`${baseUrl}?toAddress=${_toAddress}&toAsset=${_toCurrency}`));
 		} else {
 			//Handle multiple currencies with multiple requests
 			toCurrency.forEach((tCoin) => {

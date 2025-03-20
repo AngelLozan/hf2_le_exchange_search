@@ -113,9 +113,9 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     try {
         if (toCurrency.length === 1 && fromCurrency.length === 1) {
             if (_fromAddress)
-                requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddress}&fromAsset=${_fromCurrency}`));
+                requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${_fromCurrency}`));
             if (_fromAddress)
-                requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddress}&toAsset=${_toCurrency}`));
+                requests.push(baseFetch(`${baseUrl}?toAddress=${_toAddress}&toAsset=${_toCurrency}`));
         }
         else {
             toCurrency.forEach((tCoin) => {
