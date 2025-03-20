@@ -18,7 +18,6 @@ const { Search } = require("./cryptoregex");
 const path_1 = __importDefault(require("path"));
 const pino_1 = __importDefault(require("pino"));
 const logger = (0, pino_1.default)();
-const addresses = [];
 const writerAddress = csvWriter.createObjectCsvWriter({
     path: path_1.default.resolve(__dirname, 'sheet1.csv'),
     header: [
@@ -33,34 +32,38 @@ const addressRecordWriter = (_addresses) => __awaiter(void 0, void 0, void 0, fu
 const writerSwap = csvWriter.createObjectCsvWriter({
     path: path_1.default.resolve(__dirname, 'sheet2.csv'),
     header: [
-        { "id": "createdAt", "title": "Created At" },
-        { "id": "oid", "title": "Order ID" },
-        { "id": "svc", "title": "Service" },
-        { "id": "pair", "title": "Pair" },
-        { "id": "fromAddr", "title": "From Address" },
-        { "id": "from", "title": "From" },
-        { "id": "to", "title": "To" },
-        { "id": "toAddr", "title": "To Address" },
-        { "id": "fromAmt", "title": "From Amount" },
-        { "id": "fromAmtStr", "title": "From Amount String" },
-        { "id": "fromAmtUSD", "title": "From Amount (USD)" },
-        { "id": "toAmt", "title": "To Amount" },
-        { "id": "toAmtStr", "title": "To Amount String" },
-        { "id": "toAmtUSD", "title": "To Amount (USD)" },
-        { "id": "rateId", "title": "Rate ID" },
-        { "id": "svcResponse", "title": "Service Response" },
-        { "id": "fromTx", "title": "From Transaction" },
-        { "id": "toTx", "title": "To Transaction" },
-        { "id": "status", "title": "Status" },
-        { "id": "svcStatus", "title": "Service Status" },
-        { "id": "exchangeAddr", "title": "Exchange Address" },
-        { "id": "fromSource", "title": "From Source" },
-        { "id": "refundTx", "title": "Refund Transaction" },
-        { "id": "updatedAt", "title": "Updated At" },
-        { "id": "btn", "title": "Button" },
-        { "id": "error", "title": "Error" },
-        { "id": "clientBuild", "title": "Client Build" },
-        { "id": "clientVer", "title": "Client Version" }
+        { id: "createdAt", title: "Created At" },
+        { id: "providerOrderId", title: "Order ID" },
+        { id: "pairId", title: "Pair" },
+        { id: "fromAddress", title: "From Address" },
+        { id: "fromTransactionId", title: "From Transaction ID" },
+        { id: "toAddress", title: "To Address" },
+        { id: "toTransactionId", title: "To Transaction ID" },
+        { id: "id", title: "Swap ID" },
+        { id: "message", title: "Message" },
+        { id: "payInAddress", title: "Pay-In Address" },
+        { id: "rateId", title: "Rate ID" },
+        { id: "status", title: "Status" },
+        { id: "updatedAt", title: "Updated At" },
+        { id: "amount", title: "Amount" },
+        { id: "toAmount", title: "To Amount" },
+        { id: "svc", title: "Service" },
+        { id: "from", title: "From" },
+        { id: "to", title: "To" },
+        { id: "fromAmt", title: "From Amount" },
+        { id: "fromAmtStr", title: "From Amount String" },
+        { id: "fromAmtUSD", title: "From Amount (USD)" },
+        { id: "toAmt", title: "To Amount" },
+        { id: "toAmtStr", title: "To Amount String" },
+        { id: "toAmtUSD", title: "To Amount (USD)" },
+        { id: "svcResponse", title: "Service Response" },
+        { id: "svcStatus", title: "Service Status" },
+        { id: "fromSource", title: "From Source" },
+        { id: "refundTx", title: "Refund Transaction" },
+        { id: "btn", title: "Button" },
+        { id: "error", title: "Error" },
+        { id: "clientBuild", title: "Client Build" },
+        { id: "clientVer", title: "Client Version" }
     ],
 });
 const swapsRecordWriter = (_swaps) => __awaiter(void 0, void 0, void 0, function* () {
@@ -90,6 +93,7 @@ const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_toAddress = null, _fromAddress = null, _toCurrency = null, _fromCurrency = null) {
     const baseUrl = 'https://exchange.exodus.io/v3/orders';
+    let addresses = [];
     let toCurrency = [];
     let fromCurrency = [];
     if (_toCurrency === null && _toAddress !== null) {
@@ -108,7 +112,6 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         if (_fromCurrency !== null)
             fromCurrency.push(_fromCurrency);
     }
-    let addresses = [];
     let requests = [];
     try {
         if (toCurrency.length === 1 && fromCurrency.length === 1) {
@@ -120,36 +123,38 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         else {
             toCurrency.forEach((tCoin) => {
                 if (tCoin !== "Not Found")
-                    requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddress}&toAsset=${tCoin}`));
+                    requests.push(baseFetch(`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`));
             });
             fromCurrency.forEach((fCoin) => {
                 if (fCoin !== "Not Found")
-                    requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddress}&fromAsset=${fCoin}`));
+                    requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
             });
         }
         const responses = yield Promise.all(requests);
         const dataArrays = yield Promise.all(responses.map(res => res.status === 200 ? res.json() : console.log("\n\n Swap data not found. \n\n")));
         console.log("\n\n DATA ARRAYS: ", dataArrays);
         const mergedData = Object.values(dataArrays.flat().reduce((acc, item) => {
-            acc[item.oid] = item;
+            acc[item.providerOrderId] = item;
             return acc;
         }, {}));
         yield swapsRecordWriter(mergedData);
         for (const data of mergedData) {
-            if (data.toAddr !== null && data.toAddr !== '' && data.toAddr !== undefined && !addresses.includes(data.toAddr)) {
-                addresses.push(data.toAddr);
+            if (data.toAddress !== null && data.toAddress !== '' && data.toAddress !== undefined && !addresses.includes(data.toAddress)) {
+                addresses.push(data.toAddress);
+                yield addressRecordWriter(addresses);
             }
-            if (data.fromAddr !== null && data.fromAddr !== '' && data.fromAddr !== undefined && !addresses.includes(data.fromAddr)) {
-                addresses.push(data.fromAddr);
+            if (data.fromAddress !== null && data.fromAddress !== '' && data.fromAddress !== undefined && !addresses.includes(data.fromAddress)) {
+                addresses.push(data.fromAddress);
+                yield addressRecordWriter(addresses);
             }
-            if (data.toAddr && data.fromAddr) {
-                yield (0, exports.fetchSwapData)(data.toAddr, data.fromAddr, data.to, data.from);
+            if (data.toAddress && data.fromAddress) {
+                yield (0, exports.fetchSwapData)(data.toAddress, data.fromAddress, data.to, data.from);
             }
-            else if (data.toAddr && !data.fromAddr) {
-                yield (0, exports.fetchSwapData)(data.toAddr, null, data.to, null);
+            else if (data.toAddress && !data.fromAddress) {
+                yield (0, exports.fetchSwapData)(data.toAddress, null, data.to, null);
             }
-            else if (!data.toAddr && data.fromAddr) {
-                yield (0, exports.fetchSwapData)(null, data.fromAddr, null, data.from);
+            else if (!data.toAddress && data.fromAddress) {
+                yield (0, exports.fetchSwapData)(null, data.fromAddress, null, data.from);
             }
             else {
                 console.log("No more remaining pairs");

@@ -5,36 +5,49 @@ import pino from 'pino';
 const logger = pino();
 
 
-type SwapData = {
-  createdAt:string;	
-  providerOrderId:string;	
-  svc:string;	
-  pair:string;
-  fromAddr:string;	
-  from:string;	
-  to:string;	
-  toAddr:string;	
-  fromAmt:string;	
-  fromAmtStr:string;	
-  fromAmtUSD:string;	
-  toAmt:string;	
-  toAmtStr:string;	
-  toAmtUSD:string;	
-  rateId:string;	
-  svcResponse:string;	
-  fromTx:string;	
-  toTx:string;	
-  status:string;	
-  svcStatus:string;	
-  exchangeAddr:string;	
-  fromSource:string;	
-  refundTx:string;	
-  updatedAt:string;
-  btn:string;	
-  error:string;	
-  clientBuild:string;	
-  clientVer:string;
+type AmountData = {
+  assetId: string;
+  value: string;
 };
+
+type Address = string;
+
+type SwapData = {
+  amount: AmountData; 
+  toAmount: AmountData; 
+  createdAt: string;
+  providerOrderId: string;
+  pairId: string;
+  fromAddress: string;
+  fromTransactionId: string;
+  id: string;
+  message: string;
+  payInAddress: string;
+  rateId: string;
+  toAddress: string;
+  toTransactionId: string;
+  updatedAt: string;
+  status: string;
+  //optional from csv
+  svc?: string;
+  from?: string; //amount.assetId;
+  to?: string; //toAmount.assetId;
+  fromAmt?: string;
+  fromAmtStr?: string; //amount.value;
+  fromAmtUSD?: string; //amount.value;
+  toAmt?: string;
+  toAmtStr?: string; //toAmount.value;
+  toAmtUSD?: string; //toAmount.value;
+  svcResponse?: string;
+  svcStatus?: string;
+  fromSource?: string;
+  refundTx?: string;
+  btn?: string;
+  error?: string;
+  clientBuild?: string;
+  clientVer?: string;
+};
+
 
 // TO DO: Adapt appropriate type and reduce by providerOrderId
 
@@ -56,14 +69,6 @@ type SwapData = {
 //       status: 'complete'
 //     },
 
-// Search original address, need to identify sometimes which asset it represents (ie. ETH, BNB, TRX, USDT), use cryptoregex
-// Search by address can be done via API but I believe the currency has to be included as well in order to return the results. 
-// You can't define a time range via API, it'll just give you all that matches. 
-// It has to include the fromAsset or the toAsset. 
-// We don’t always receive the asset with the address. This will effect searching for EVM and TRX addresses.
-// We’ll get all assets that match the address (ETH, BNB, TRX, USDT). 
-
-const addresses: string[] = []; 
 
 // Put additional addresses from swap pair. Add to sheet 1
 const writerAddress = csvWriter.createObjectCsvWriter({
@@ -73,7 +78,7 @@ const writerAddress = csvWriter.createObjectCsvWriter({
   ],
 });
 
-const addressRecordWriter = async (_addresses: string[]) => {
+const addressRecordWriter = async (_addresses: Address[]) => {
 	await writerAddress.writeRecords(_addresses);
 	console.log("Done writing Sheet 1 with address data. ✅");
 	logger.info("Done writing Sheet 1 with address data.");
@@ -83,35 +88,42 @@ const addressRecordWriter = async (_addresses: string[]) => {
 const writerSwap = csvWriter.createObjectCsvWriter({
   path: path.resolve(__dirname, 'sheet2.csv'),
   header: [
-    { "id": "createdAt", "title": "Created At" },
-    { "id": "providerOrderId", "title": "Order ID" },
-    { "id": "svc", "title": "Service" },
-    { "id": "pair", "title": "Pair" },
-    { "id": "fromAddr", "title": "From Address" },
-    { "id": "from", "title": "From" },
-    { "id": "to", "title": "To" },
-    { "id": "toAddr", "title": "To Address" },
-    { "id": "fromAmt", "title": "From Amount" },
-    { "id": "fromAmtStr", "title": "From Amount String" },
-    { "id": "fromAmtUSD", "title": "From Amount (USD)" },
-    { "id": "toAmt", "title": "To Amount" },
-    { "id": "toAmtStr", "title": "To Amount String" },
-    { "id": "toAmtUSD", "title": "To Amount (USD)" },
-    { "id": "rateId", "title": "Rate ID" },
-    { "id": "svcResponse", "title": "Service Response" },
-    { "id": "fromTx", "title": "From Transaction" },
-    { "id": "toTx", "title": "To Transaction" },
-    { "id": "status", "title": "Status" },
-    { "id": "svcStatus", "title": "Service Status" },
-    { "id": "exchangeAddr", "title": "Exchange Address" },
-    { "id": "fromSource", "title": "From Source" },
-    { "id": "refundTx", "title": "Refund Transaction" },
-    { "id": "updatedAt", "title": "Updated At" },
-    { "id": "btn", "title": "Button" },
-    { "id": "error", "title": "Error" },
-    { "id": "clientBuild", "title": "Client Build" },
-    { "id": "clientVer", "title": "Client Version" }
-  ],
+    { id: "createdAt", title: "Created At" },
+    { id: "providerOrderId", title: "Order ID" },
+    { id: "pairId", title: "Pair" },
+    { id: "fromAddress", title: "From Address" },
+    { id: "fromTransactionId", title: "From Transaction ID" },
+    { id: "toAddress", title: "To Address" },
+    { id: "toTransactionId", title: "To Transaction ID" },
+    { id: "id", title: "Swap ID" },
+    { id: "message", title: "Message" },
+    { id: "payInAddress", title: "Pay-In Address" },
+    { id: "rateId", title: "Rate ID" },
+    { id: "status", title: "Status" },
+    { id: "updatedAt", title: "Updated At" },
+    
+    // Optional to define
+    { id: "amount", title: "Amount" },
+    { id: "toAmount", title: "To Amount" },
+    { id: "svc", title: "Service" },
+    { id: "from", title: "From" },
+    { id: "to", title: "To" },
+    { id: "fromAmt", title: "From Amount" },
+    { id: "fromAmtStr", title: "From Amount String" },
+    { id: "fromAmtUSD", title: "From Amount (USD)" },
+    { id: "toAmt", title: "To Amount" },
+    { id: "toAmtStr", title: "To Amount String" },
+    { id: "toAmtUSD", title: "To Amount (USD)" },
+    { id: "svcResponse", title: "Service Response" },
+    { id: "svcStatus", title: "Service Status" },
+    { id: "fromSource", title: "From Source" },
+    { id: "refundTx", title: "Refund Transaction" },
+    { id: "btn", title: "Button" },
+    { id: "error", title: "Error" },
+    { id: "clientBuild", title: "Client Build" },
+    { id: "clientVer", title: "Client Version" }
+],
+
 });
 
 const swapsRecordWriter = async (_swaps: SwapData[]) => {
@@ -145,6 +157,7 @@ const baseFetch = async (_url: string) => {
 // Get swap data from api
 export const fetchSwapData = async (_toAddress: string | null = null, _fromAddress: string | null = null, _toCurrency: string | null = null, _fromCurrency: string | null = null) => {
 	const baseUrl = 'https://exchange.exodus.io/v3/orders';
+	let addresses: Address[] = [];
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
@@ -165,7 +178,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		if(_fromCurrency !== null) fromCurrency.push(_fromCurrency);
 	}
 
-	let addresses: string[] = [];
+	
 	let requests: Promise<Response | undefined>[] = [];
 
 	try {
@@ -181,11 +194,11 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		} else {
 			//Handle multiple currencies with multiple requests
 			toCurrency.forEach((tCoin) => {
-				if(tCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?toAddr=${_toAddress}&toAsset=${tCoin}`));
+				if(tCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`));
 			});
 
 			fromCurrency.forEach((fCoin) => {
-				if(fCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?fromAddr=${_fromAddress}&fromAsset=${fCoin}`));
+				if(fCoin !== "Not Found") requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
 			});
 		}
         
@@ -204,7 +217,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		*/
     	const mergedData: SwapData[] = Object.values(
 	        dataArrays.flat().reduce((acc, item) => {
-	            acc[item.oid] = item;
+	            acc[item.providerOrderId] = item;
 	            return acc;
 	        }, {})
 	    );
@@ -215,20 +228,22 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 	    // Add addresses to sheet 1 & recursive search
     	for (const data of mergedData) {
 		    // If address exists in each data hash, push it to the sheet
-		    if (data.toAddr !== null && data.toAddr !== '' && data.toAddr !== undefined && !addresses.includes(data.toAddr)) {
-		        addresses.push(data.toAddr);
+		    if (data.toAddress !== null && data.toAddress !== '' && data.toAddress !== undefined && !addresses.includes(data.toAddress)) {
+		        addresses.push(data.toAddress);
+		        await addressRecordWriter(addresses);
 		    }
-		    if (data.fromAddr !== null && data.fromAddr !== '' && data.fromAddr !== undefined && !addresses.includes(data.fromAddr)) {
-		        addresses.push(data.fromAddr);
+		    if (data.fromAddress !== null && data.fromAddress !== '' && data.fromAddress !== undefined && !addresses.includes(data.fromAddress)) {
+		        addresses.push(data.fromAddress);
+		        await addressRecordWriter(addresses);
 		    }
 
 		    // Figure out recursion
-		    if (data.toAddr && data.fromAddr) {
-		        await fetchSwapData(data.toAddr, data.fromAddr, data.to, data.from);
-		    } else if (data.toAddr && !data.fromAddr) {
-		        await fetchSwapData(data.toAddr, null, data.to, null);
-		    } else if (!data.toAddr && data.fromAddr) {
-		        await fetchSwapData(null, data.fromAddr, null, data.from);
+		    if (data.toAddress && data.fromAddress) {
+		        await fetchSwapData(data.toAddress, data.fromAddress, data.to, data.from);
+		    } else if (data.toAddress && !data.fromAddress) {
+		        await fetchSwapData(data.toAddress, null, data.to, null);
+		    } else if (!data.toAddress && data.fromAddress) {
+		        await fetchSwapData(null, data.fromAddress, null, data.from);
 		    } else {
 		        console.log("No more remaining pairs");
 		        logger.info("No more remaining pairs");
