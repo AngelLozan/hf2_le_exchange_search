@@ -4,7 +4,7 @@ A little automation for the Hack Force II team.
 
 ![image](./assets/hf2_recursive_exchange_search.png)
 
-### Basic info and requirement
+## Basic info and Scope
 - Search by address can be done via API but I believe the currency has to be included as well in order to return the results. 
 - You can't define a time range via API, it'll just give you all that matches. 
 - It has to include the fromAsset or the toAsset. 
@@ -30,7 +30,39 @@ curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Fire
 
 ```
 
+## 📦 Requirements
+
+Before installing, make sure you have the following installed on your system:
+
+- [Node.js](https://nodejs.org/) (version >= 22.0.0)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+- [TypeScript](https://www.typescriptlang.org/) (installed automatically via `devDependencies`)
+- [Git](https://git-scm.com/)
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/hf2_law_enforcement_search.git
+cd hf2_law_enforcement_search
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Build the Project
+
+```bash
+tsc
+```
+
+
 ### Usage:
+
 *Arguments can be `null`*
 *Need to & from address ideally.*
 
