@@ -30,7 +30,6 @@ curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Fire
 
 ```
 
-
 Get Assets: 
 
 ```curl
@@ -81,7 +80,6 @@ Response example:
 ```
 
 ## 📦 Requirements
-----
 
 Before installing, make sure you have the following installed on your system:
 
@@ -91,7 +89,7 @@ Before installing, make sure you have the following installed on your system:
 - [Git](https://git-scm.com/)
 
 ## 🚀 Getting Started
-----
+
 
 ### 1. Clone the Repository
 
@@ -113,8 +111,7 @@ tsc
 ```
 
 
-### Usage:
-----
+### 4. Usage:
 
 - Order of arguments is important. If you have one argument and not the other separating two, then use a space and an empty string `''`
 - Structure the CSV, if path passed, to have one header value named `ADDRESS` under which all addresses you wish to check are located.
@@ -141,3 +138,7 @@ Example where you have no CSV but you have a `fromAddress` and nothing else (ie.
 ```zsh
 npm run search '' '<fromAddress>' 
 ```
+
+
+
+
