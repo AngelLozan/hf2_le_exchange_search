@@ -153,7 +153,6 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         const dataArrays = yield Promise.all(responses.map((res) => __awaiter(void 0, void 0, void 0, function* () {
             if (res && res.status === 200) {
                 const json = yield res.json();
-                console.log("Fetched data chunk:", JSON.stringify(json, null, 2));
                 return json;
             }
             else {
@@ -173,20 +172,20 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
                 data.toAddress !== "" &&
                 data.toAddress !== undefined &&
                 !addresses.includes(data.toAddress)) {
+                console.log("to addy: ", data.toAddress);
                 addresses.push(data.toAddress);
             }
             if (data.fromAddress !== null &&
                 data.fromAddress !== "" &&
                 data.fromAddress !== undefined &&
                 !addresses.includes(data.fromAddress)) {
+                console.log("from addy: ", data.fromAddress);
                 addresses.push(data.fromAddress);
             }
             const toCheck = [data.toAddress, data.fromAddress];
             const allFound = toCheck.every(addr => addresses.includes(addr));
             if (allFound) {
-                console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
-                yield addressRecordWriter(addresses);
-                process.exit(1);
+                continue;
             }
             else if (data.toAddress && data.fromAddress) {
                 yield (0, exports.fetchSwapData)(data.fromAddress, data.toAddress, data.to, data.from);
@@ -198,9 +197,10 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
                 yield (0, exports.fetchSwapData)(data.fromAddress, null, null, data.from);
             }
             else {
-                console.log("No more remaining pairs");
+                yield addressRecordWriter(addresses);
             }
         }
+        console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
     }
     catch (error) {
         console.log("Something went wrong with that call", error.message);
@@ -237,19 +237,24 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
             [csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
         }
         console.log(args);
-        if (csv_file_path !== null) {
-            fs_1.default.createReadStream(csv_file_path)
-                .pipe((0, csv_parser_1.default)())
-                .on('data', (row) => __awaiter(this, void 0, void 0, function* () {
-                console.log(row.ADDRESS);
-                yield (0, exports.fetchSwapData)(row.ADDRESS);
-            }))
-                .on('end', () => {
-                console.log('CSV file successfully processed');
-            });
+        try {
+            if (csv_file_path !== null) {
+                fs_1.default.createReadStream(csv_file_path)
+                    .pipe((0, csv_parser_1.default)())
+                    .on('data', (row) => __awaiter(this, void 0, void 0, function* () {
+                    console.log(row.ADDRESS);
+                    yield (0, exports.fetchSwapData)(row.ADDRESS);
+                }))
+                    .on('end', () => {
+                    console.log('CSV file successfully processed');
+                });
+            }
+            else {
+                yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
+            }
         }
-        else {
-            yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
+        catch (e) {
+            console.log(`There was an issue with that CSV read: ${e}`);
         }
     });
 }

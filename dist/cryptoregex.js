@@ -20,8 +20,13 @@ const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
         return "algo";
     }
     else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
-        let assets = yield evmFetch();
-        return ["eth", "usdt", "bnb"];
+        try {
+            let assets = yield evmFetch();
+            return assets;
+        }
+        catch (e) {
+            return "Not Found";
+        }
     }
     else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
         return "trx";
@@ -92,7 +97,7 @@ const evmFetch = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         const data = yield response.json();
         const assets = data
-            .filter((asset) => asset.network === "ethereum")
+            .filter((asset) => { var _a; return ((_a = asset.meta) === null || _a === void 0 ? void 0 : _a.contractAddress) && /^0x[a-fA-F0-9]{40}$/g.test(asset.meta.contractAddress); })
             .map((asset) => asset.symbol);
         return assets;
     }

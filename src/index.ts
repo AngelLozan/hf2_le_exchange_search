@@ -248,10 +248,10 @@ export const fetchSwapData = async (
 			responses.map(async (res) => {
 				if (res && res.status === 200) {
 					const json = await res.json();
-					console.log(
-						"Fetched data chunk:",
-						JSON.stringify(json, null, 2),
-					);
+					// console.log(
+					// 	"Fetched data chunk:",
+					// 	JSON.stringify(json, null, 2),
+					// );
 					return json;
 				} else {
 					console.log("Swap data not found or response error");
@@ -293,6 +293,7 @@ export const fetchSwapData = async (
 				data.toAddress !== undefined &&
 				!addresses.includes(data.toAddress)
 			) {
+				console.log("to addy: ",data.toAddress);
 				addresses.push(data.toAddress);
 			}
 			if (
@@ -301,6 +302,7 @@ export const fetchSwapData = async (
 				data.fromAddress !== undefined &&
 				!addresses.includes(data.fromAddress)
 			) {
+				console.log("from addy: ",data.fromAddress);
 				addresses.push(data.fromAddress);
 			}
 
@@ -310,9 +312,8 @@ export const fetchSwapData = async (
 			const allFound = toCheck.every(addr => addresses.includes(addr));
 
 			if(allFound){
-				console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
-				await addressRecordWriter(addresses);
-				process.exit(1);
+				// process.exit(1);
+				continue;
 			} else if (data.toAddress && data.fromAddress) {
 				await fetchSwapData(
 					data.fromAddress,
@@ -325,9 +326,12 @@ export const fetchSwapData = async (
 			} else if (!data.toAddress && data.fromAddress) {
 				await fetchSwapData(data.fromAddress, null, null, data.from);
 			} else {
-				console.log("No more remaining pairs");
+				// console.log("No more remaining pairs");
+				// console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
+				await addressRecordWriter(addresses);
 			}
 		}
+		console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
 		// Write unique addresses to sheet 1
 		// console.log("\n\n Addresses: ", addresses);
 		
@@ -374,24 +378,28 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 
 	console.log(args);
 
-	if(csv_file_path !== null){
-		//Iterate csv file of addresses
-		fs.createReadStream(csv_file_path)
-		  .pipe(csv())
-		  .on('data', async (row) => {
-		    console.log(row.ADDRESS);
-		    await fetchSwapData(row.ADDRESS)
-		  })
-		  .on('end', () => {
-		    console.log('CSV file successfully processed');
-		  });
-	} else {
-		await fetchSwapData(
-			_fromAddress || null,
-			_toAddress || null,
-			_toCurrency || null,
-			_fromCurrency || null,
-		);
+	try{
+		if(csv_file_path !== null){
+			//Iterate csv file of addresses
+			fs.createReadStream(csv_file_path)
+			  .pipe(csv())
+			  .on('data', async (row) => {
+			    console.log(row.ADDRESS);
+			    await fetchSwapData(row.ADDRESS)
+			  })
+			  .on('end', () => {
+			    console.log('CSV file successfully processed');
+			  });
+		} else {
+			await fetchSwapData(
+				_fromAddress || null,
+				_toAddress || null,
+				_toCurrency || null,
+				_fromCurrency || null,
+			);
+		}
+	} catch(e: any){
+		console.log(`There was an issue with that CSV read: ${e}`);
 	}
 	
 }

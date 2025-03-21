@@ -1,4 +1,11 @@
-// @dev Check to see if ioc is malicious address. If so, post to github for blowfish to incorporate
+type Asset = {
+    symbol: string;
+    meta?: {
+        contractAddress?: string;
+    };
+};
+
+
 const Search = async (_address: string) => {
     const source = _address;
 
@@ -12,8 +19,13 @@ const Search = async (_address: string) => {
         return "algo";
     } else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
         //@dev EVM address
-        let assets: string[] | null = await evmFetch();
-        return ["eth", "usdt", "bnb"]; // TO DO: ERROR HANDLING HERE
+        try{
+            let assets: string[] | null = await evmFetch();
+            return assets;
+        } catch(e:any){
+            return "Not Found"
+        }
+        // return ["eth", "usdt", "bnb"]; // For testing
     } else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
         //@dev TRX address
         return "trx";
@@ -108,13 +120,14 @@ const evmFetch = async (): Promise<string[] | null> => {
         }
 
         const data = await response.json();
+        // [{...}, {...}]
 
         // TO DO: Filter for EVM assets.
         // Ex: Returns the `symbol` of all assets:
-        const assets: string[] = data
-            .filter((asset: any) => asset.network === "ethereum") // adjust based on actual structure
+        const assets: string[] = (data as Asset[])
+            .filter((asset: any) => asset.meta?.contractAddress && /^0x[a-fA-F0-9]{40}$/g.test(asset.meta.contractAddress)) 
             .map((asset: any) => asset.symbol);
-
+        // console.log("\n\n Assets: ", assets);
         return assets;
     } catch (error: any) {
         console.error("Something went wrong during EVM fetch:", error);
@@ -123,6 +136,22 @@ const evmFetch = async (): Promise<string[] | null> => {
 };
 
 module.exports = { Search };
+
+ // {
+ //    "id": "ZROethereumarbone4264C898",
+ //    "name": "LayerZero",
+ //    "network": "ethereumarbone",
+ //    "decimals": 18,
+ //    "symbol": "ZRO",
+ //    "meta": {
+ //      "contractAddress": "0x6985884c4392d348587b19cb9eaaf157f13271cd"
+ //    },
+ //    "ethereumarbone": {
+ //      "contractAddress": "0x6985884c4392d348587b19cb9eaaf157f13271cd"
+ //    }
+ //  },
+
+
 
 // else if (/^(bnb)[a-z0-9]{38}$/g.test(source)) {
 //             //@dev BNB Beacon Address
