@@ -20,6 +20,7 @@ const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
         return "algo";
     }
     else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
+        let assets = yield evmFetch();
         return ["eth", "usdt", "bnb"];
     }
     else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
@@ -72,6 +73,32 @@ const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
     }
     else {
         return "Not Found";
+    }
+});
+const evmFetch = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const response = yield fetch("https://exchange.exodus.io/v3/assets", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0",
+                "App-Name": "hf2_le_exchange_search",
+                "App-Version": "1.0.0",
+            },
+        });
+        if (!response.ok) {
+            console.error("Failed to fetch assets. Status:", response.status);
+            return null;
+        }
+        const data = yield response.json();
+        const assets = data
+            .filter((asset) => asset.network === "ethereum")
+            .map((asset) => asset.symbol);
+        return assets;
+    }
+    catch (error) {
+        console.error("Something went wrong during EVM fetch:", error);
+        return null;
     }
 });
 module.exports = { Search };
