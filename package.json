@@ -34,6 +34,7 @@
     "@types/supertest": "^6.0.2",
     "cors": "^2.8.5",
     "csv-parse": "^5.5.3",
+    "csv-parser": "^3.2.0",
     "csv-writer": "^1.6.0",
     "dotenv": "^16.4.5",
     "pino": "^9.4.0",

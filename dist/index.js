@@ -17,7 +17,9 @@ const csvWriter = require("csv-writer");
 const { Search } = require("./cryptoregex");
 const path_1 = __importDefault(require("path"));
 const pino_1 = __importDefault(require("pino"));
+const fs_1 = __importDefault(require("fs"));
 const logger = (0, pino_1.default)();
+const csv_parser_1 = __importDefault(require("csv-parser"));
 const writerAddress = csvWriter.createObjectCsvWriter({
     path: path_1.default.resolve(__dirname, "sheet1.csv"),
     header: [{ id: "address", title: "Address" }],
@@ -196,6 +198,7 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const args = process.argv.slice(2);
         console.log(args);
+        let csv_file_path = null;
         let _fromAddress = null;
         let _toAddress = null;
         let _toCurrency = null;
@@ -209,15 +212,31 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
         `);
             process.exit(1);
         }
-        else if (args.length < 2) {
-            _fromAddress = args[0];
-            _toAddress = args[0];
+        else if (args.length === 1) {
+            csv_file_path = args[0];
+        }
+        else if (args.length === 2) {
+            _fromAddress = args[1];
+            _toAddress = args[1];
         }
         else {
-            [_fromAddress, _toAddress, _toCurrency, _fromCurrency] = args;
+            [csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
         }
         console.log(args);
-        yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
+        if (csv_file_path !== null) {
+            fs_1.default.createReadStream(csv_file_path)
+                .pipe((0, csv_parser_1.default)())
+                .on('data', (row) => __awaiter(this, void 0, void 0, function* () {
+                console.log(row.ADDRESS);
+                yield (0, exports.fetchSwapData)(row.ADDRESS);
+            }))
+                .on('end', () => {
+                console.log('CSV file successfully processed');
+            });
+        }
+        else {
+            yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
+        }
     });
 }
 if (require.main === module) {

@@ -2,7 +2,10 @@ const csvWriter = require("csv-writer");
 const { Search } = require("./cryptoregex");
 import path from "path";
 import pino from "pino";
+import fs from "fs";
 const logger = pino();
+// const csv = require('csv-parser');
+import csv from 'csv-parser';
 
 type AmountData = {
 	assetId: string;
@@ -322,14 +325,19 @@ export const fetchSwapData = async (
 	}
 };
 
+
 async function main() {
+
+	// TO DO: Take list of addresses and treat as individual searches.
 	const args = process.argv.slice(2);
 	console.log(args);
 
+	let csv_file_path: string | null = null;
 	let _fromAddress: string | null = null;
 	let _toAddress: string | null = null;
 	let _toCurrency: string | null = null;
 	let _fromCurrency: string | null = null;
+
 
 	if (args.length < 1) {
 		console.error(`
@@ -339,22 +347,40 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 -------------
         `);
 		process.exit(1);
-	} else if (args.length < 2) {
-		// If only one arg, use it for both to/from address
-		_fromAddress = args[0];
-		_toAddress = args[0];
+	} else if(args.length === 1){
+		// CSV file of addresses
+		csv_file_path = args[0]
+	} else if (args.length === 2) {
+		// If only address and only one, use it for both to/from address
+		_fromAddress = args[1];
+		_toAddress = args[1];
 	} else {
-		[_fromAddress, _toAddress, _toCurrency, _fromCurrency] = args;
+		// [_fromAddress, _toAddress, _toCurrency, _fromCurrency] = args;
+		[csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
 	}
 
 	console.log(args);
 
-	await fetchSwapData(
-		_fromAddress || null,
-		_toAddress || null,
-		_toCurrency || null,
-		_fromCurrency || null,
-	);
+	if(csv_file_path !== null){
+		//Iterate csv file of addresses
+		fs.createReadStream(csv_file_path)
+		  .pipe(csv())
+		  .on('data', async (row) => {
+		    console.log(row.ADDRESS);
+		    await fetchSwapData(row.ADDRESS)
+		  })
+		  .on('end', () => {
+		    console.log('CSV file successfully processed');
+		  });
+	} else {
+		await fetchSwapData(
+			_fromAddress || null,
+			_toAddress || null,
+			_toCurrency || null,
+			_fromCurrency || null,
+		);
+	}
+	
 }
 
 if (require.main === module) {

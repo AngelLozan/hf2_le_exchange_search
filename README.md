@@ -30,7 +30,58 @@ curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Fire
 
 ```
 
+
+Get Assets: 
+
+```curl
+curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Firefox/81.0" --location 'https://exchange.exodus.io/v3/assets' \
+--header 'App-Name: hf2_le_exchange_search' \
+--header 'App-Version: 1.0.0' | fx .
+
+```
+
+Response example:
+
+```json
+[
+  {
+    "id": "USDTTRX",
+    "name": "Tether USD",
+    "network": "tronmainnet",
+    "decimals": 6,
+    "symbol": "USDT",
+    "meta": {
+      "contractAddress": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    },
+    "tronmainnet": {
+      "contractAddress": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    }
+  },
+  {
+    "id": "USDTTEZOS",
+    "name": "Tether USD",
+    "network": "tezos",
+    "decimals": 6,
+    "symbol": "USDT"
+  },
+  {
+    "id": "USDTbscDDEDF0F8",
+    "name": "Tether USD",
+    "network": "bsc",
+    "decimals": 18,
+    "symbol": "USDT",
+    "meta": {
+      "contractAddress": "0x55d398326f99059fF775485246999027B3197955"
+    },
+    "bsc": {
+      "contractAddress": "0x55d398326f99059fF775485246999027B3197955"
+    }
+  }
+ ]
+```
+
 ## 📦 Requirements
+----
 
 Before installing, make sure you have the following installed on your system:
 
@@ -40,6 +91,7 @@ Before installing, make sure you have the following installed on your system:
 - [Git](https://git-scm.com/)
 
 ## 🚀 Getting Started
+----
 
 ### 1. Clone the Repository
 
@@ -62,11 +114,30 @@ tsc
 
 
 ### Usage:
+----
 
-*Arguments can be `null`*
-*Need to & from address ideally.*
+- Order of arguments is important. If you have one argument and not the other separating two, then use a space and an empty string `''`
+- Structure the CSV, if path passed, to have one header value named `ADDRESS` under which all addresses you wish to check are located.
 
-```zsh
-npm run search <fromAddress> <toAddress> <toCurrency> <fromCurrency>
+ex: 
+
+```csv
+ADDRESS
+0x.......
+TR.....
+bc1......
+
 ```
 
+
+Full implementation with all parameters possible in the designated order:
+
+```zsh
+npm run search '<path_to_csv_of_addresses>' '<fromAddress>' '<toAddress>' '<toCurrency>' '<fromCurrency>'
+```
+
+Example where you have no CSV but you have a `fromAddress` and nothing else (ie. the other parameters will be `null`):
+
+```zsh
+npm run search '' '<fromAddress>' 
+```
