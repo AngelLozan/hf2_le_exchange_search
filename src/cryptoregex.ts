@@ -13,7 +13,7 @@ const Search = async (_address: string) => {
            return "algo";
         } else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
             //@dev EVM address
-           return ["eth", "usdt", "bnb"];
+           return ["eth", "usdt", "bnb"]; // TO DO: Make calll to https://exchange.exodus.io/v3/assets in order to grab possible assets and add to coins.
         } else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
             //@dev TRX address
             return "trx";

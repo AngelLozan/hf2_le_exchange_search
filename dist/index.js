@@ -100,7 +100,14 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
         console.log("===> TO COIN: ", toCoin);
-        toCurrency.push(toCoin.toUpperCase());
+        if (toCoin.length > 1) {
+            for (const tC of toCoin) {
+                toCurrency.push(tC.toUpperCase());
+            }
+        }
+        else {
+            toCurrency.push(toCoin.toUpperCase());
+        }
     }
     else {
         if (_toCurrency !== null)
@@ -109,7 +116,14 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     if (_fromCurrency === null && _fromAddress !== null) {
         const fromCoin = yield Search(_fromAddress);
         console.log("===> FROM COIN: ", fromCoin);
-        fromCurrency.push(fromCoin.toUpperCase());
+        if (fromCoin.length > 1) {
+            for (const fC of fromCoin) {
+                fromCurrency.push(fC.toUpperCase());
+            }
+        }
+        else {
+            fromCurrency.push(fromCoin.toUpperCase());
+        }
     }
     else {
         if (_fromCurrency !== null)
