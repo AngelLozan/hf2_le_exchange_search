@@ -25,9 +25,8 @@ const writerAddress = csvWriter.createObjectCsvWriter({
     ],
 });
 const addressRecordWriter = (_addresses) => __awaiter(void 0, void 0, void 0, function* () {
-    yield writerAddress.writeRecords(_addresses);
-    console.log("Done writing Sheet 1 with address data. ✅");
-    logger.info("Done writing Sheet 1 with address data.");
+    const formatted = _addresses.map(addr => ({ address: addr }));
+    yield writerAddress.writeRecords(formatted);
 });
 const writerSwap = csvWriter.createObjectCsvWriter({
     path: path_1.default.resolve(__dirname, 'sheet2.csv'),
@@ -68,8 +67,6 @@ const writerSwap = csvWriter.createObjectCsvWriter({
 });
 const swapsRecordWriter = (_swaps) => __awaiter(void 0, void 0, void 0, function* () {
     yield writerSwap.writeRecords(_swaps);
-    console.log("Done writing Sheet 2 with swap data. ✅");
-    logger.info("Done writing Sheet 2 with swap data.");
 });
 const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
     let response;
@@ -91,7 +88,7 @@ const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
         return response;
     }
 });
-const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_toAddress = null, _fromAddress = null, _toCurrency = null, _fromCurrency = null) {
+const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null) {
     const baseUrl = 'https://exchange.exodus.io/v3/orders';
     let addresses = [];
     let toCurrency = [];
@@ -132,7 +129,6 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         }
         const responses = yield Promise.all(requests);
         const dataArrays = yield Promise.all(responses.map(res => res.status === 200 ? res.json() : console.log("\n\n Swap data not found. \n\n")));
-        console.log("\n\n DATA ARRAYS: ", dataArrays);
         const mergedData = Object.values(dataArrays.flat().reduce((acc, item) => {
             acc[item.providerOrderId] = item;
             return acc;
@@ -141,11 +137,9 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         for (const data of mergedData) {
             if (data.toAddress !== null && data.toAddress !== '' && data.toAddress !== undefined && !addresses.includes(data.toAddress)) {
                 addresses.push(data.toAddress);
-                yield addressRecordWriter(addresses);
             }
             if (data.fromAddress !== null && data.fromAddress !== '' && data.fromAddress !== undefined && !addresses.includes(data.fromAddress)) {
                 addresses.push(data.fromAddress);
-                yield addressRecordWriter(addresses);
             }
             if (data.toAddress && data.fromAddress) {
                 yield (0, exports.fetchSwapData)(data.toAddress, data.fromAddress, data.to, data.from);
@@ -158,10 +152,9 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
             }
             else {
                 console.log("No more remaining pairs");
-                logger.info("No more remaining pairs");
-                yield addressRecordWriter(addresses);
             }
         }
+        yield addressRecordWriter(addresses);
     }
     catch (error) {
         console.log("Something went wrong with that call", error.message);
@@ -173,11 +166,11 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const args = process.argv.slice(2);
         if (args.length < 4) {
-            console.error("Usage: node dist/index.js <toAddress> <fromAddress> <toCurrency> <fromCurrency>");
+            console.error("Usage: node dist/index.js <fromAddress> <toAddress> <toCurrency> <fromCurrency>");
             process.exit(1);
         }
-        const [_toAddress, _fromAddress, _toCurrency, _fromCurrency] = args;
-        yield (0, exports.fetchSwapData)(_toAddress, _fromAddress, _toCurrency, _fromCurrency);
+        const [_fromAddress, _toAddress, _toCurrency, _fromCurrency] = args;
+        yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
     });
 }
 if (require.main === module) {

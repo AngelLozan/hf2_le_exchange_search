@@ -78,12 +78,11 @@ const writerAddress = csvWriter.createObjectCsvWriter({
   ],
 });
 
-const addressRecordWriter = async (_addresses: Address[]) => {
-	await writerAddress.writeRecords(_addresses);
-	console.log("Done writing Sheet 1 with address data. ✅");
-	logger.info("Done writing Sheet 1 with address data.");
-	
+const addressRecordWriter = async (_addresses: string[]) => {
+	const formatted = _addresses.map(addr => ({ address: addr }));
+	await writerAddress.writeRecords(formatted);
 };
+
 
 const writerSwap = csvWriter.createObjectCsvWriter({
   path: path.resolve(__dirname, 'sheet2.csv'),
@@ -127,10 +126,7 @@ const writerSwap = csvWriter.createObjectCsvWriter({
 });
 
 const swapsRecordWriter = async (_swaps: SwapData[]) => {
-	await writerSwap.writeRecords(_swaps);
-	console.log("Done writing Sheet 2 with swap data. ✅");
-	logger.info("Done writing Sheet 2 with swap data.");
-	
+	await writerSwap.writeRecords(_swaps);	
 };
 
 const baseFetch = async (_url: string) => {
@@ -155,7 +151,7 @@ const baseFetch = async (_url: string) => {
 
 
 // Get swap data from api
-export const fetchSwapData = async (_toAddress: string | null = null, _fromAddress: string | null = null, _toCurrency: string | null = null, _fromCurrency: string | null = null) => {
+export const fetchSwapData = async (_fromAddress: string | null = null, _toAddress: string | null = null, _toCurrency: string | null = null, _fromCurrency: string | null = null) => {
 	const baseUrl = 'https://exchange.exodus.io/v3/orders';
 	let addresses: Address[] = [];
 	let toCurrency: string[] = [];
@@ -206,7 +202,7 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
     	const responses = await Promise.all(requests);
     	const dataArrays = await Promise.all(responses.map(res => res!.status === 200 ? res!.json() : console.log("\n\n Swap data not found. \n\n")));
 
-    	console.log("\n\n DATA ARRAYS: ", dataArrays);
+    	// console.log("\n\n DATA ARRAYS: ", dataArrays);
 
     	/* Array of unique SwapData objects based on the oid field.
     		Example:
@@ -230,11 +226,9 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		    // If address exists in each data hash, push it to the sheet
 		    if (data.toAddress !== null && data.toAddress !== '' && data.toAddress !== undefined && !addresses.includes(data.toAddress)) {
 		        addresses.push(data.toAddress);
-		        await addressRecordWriter(addresses);
 		    }
 		    if (data.fromAddress !== null && data.fromAddress !== '' && data.fromAddress !== undefined && !addresses.includes(data.fromAddress)) {
 		        addresses.push(data.fromAddress);
-		        await addressRecordWriter(addresses);
 		    }
 
 		    // Figure out recursion
@@ -246,11 +240,11 @@ export const fetchSwapData = async (_toAddress: string | null = null, _fromAddre
 		        await fetchSwapData(null, data.fromAddress, null, data.from);
 		    } else {
 		        console.log("No more remaining pairs");
-		        logger.info("No more remaining pairs");
-		        await addressRecordWriter(addresses);
 		    }
 		}
-
+		// Write unique addresses to sheet 1
+		// console.log("\n\n Addresses: ", addresses);
+		await addressRecordWriter(addresses);
 
     } catch (error: any) {
         console.log("Something went wrong with that call", error.message);
@@ -265,13 +259,13 @@ async function main() {
     const args = process.argv.slice(2);
 
     if (args.length < 4) {
-        console.error("Usage: node dist/index.js <toAddress> <fromAddress> <toCurrency> <fromCurrency>");
+        console.error("Usage: node dist/index.js <fromAddress> <toAddress> <toCurrency> <fromCurrency>");
         process.exit(1);
     }
 
-    const [_toAddress, _fromAddress, _toCurrency, _fromCurrency] = args;
+    const [_fromAddress, _toAddress, _toCurrency, _fromCurrency] = args;
 
-    await fetchSwapData(_toAddress, _fromAddress, _toCurrency, _fromCurrency);
+    await fetchSwapData(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
 }
 
 if (require.main === module) {
