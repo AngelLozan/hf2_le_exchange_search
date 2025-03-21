@@ -156,6 +156,9 @@ export const fetchSwapData = async (
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
+	if(_fromAddress !== null) addresses.push(_fromAddress);
+	if(_toAddress !== null) addresses.push(_toAddress);
+
 	// let evmCurrencies: string[] = [];
 
 	// If currency is null, then need to use cryptoregex to determine based on address

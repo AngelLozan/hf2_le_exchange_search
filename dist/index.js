@@ -91,6 +91,10 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     let addresses = [];
     let toCurrency = [];
     let fromCurrency = [];
+    if (_fromAddress !== null)
+        addresses.push(_fromAddress);
+    if (_toAddress !== null)
+        addresses.push(_toAddress);
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
         console.log("===> TO COIN: ", toCoin);
