@@ -19,15 +19,22 @@ https://exchange.exodus.io/v3/orders?fromAddress=addr1q84x3qh7e0q6fldmj5mnk89vjl
 ```curl
 
 curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Firefox/81.0" --location 'https://exchange.exodus.io/v3/orders?toAddress=TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP&toAsset=TRX' \
---header 'App-Name: scott-test' \
---header 'App-Version: 1' | fx .
+--header 'App-Name: hf2_le_exchange_search' \
+--header 'App-Version: 1.0.0' | fx .
 ```
 
+```curl
+curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Firefox/81.0" --location 'https://exchange.exodus.io/v3/orders?fromAddress=TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP&fromAsset=TRX' \
+--header 'App-Name: hf2_le_exchange_search' \
+--header 'App-Version: 1.0.0' | fx .
+
+```
 
 ### Usage:
 *Arguments can be `null`*
+*Need to & from address ideally.*
 
 ```zsh
-npm start <fromAddress> <toAddress> <toCurrency> <fromCurrency>
+npm run search <fromAddress> <toAddress> <toCurrency> <fromCurrency>
 ```
 

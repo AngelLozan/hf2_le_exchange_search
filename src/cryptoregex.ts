@@ -14,7 +14,10 @@ const Search = async (_address: string) => {
         } else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
             //@dev EVM address
            return ["eth", "usdt", "bnb"];
-        } else if (/^r[1-9A-HJ-NP-Za-km-z]{25,33}$/g.test(source)) {
+        } else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
+            //@dev TRX address
+            return "trx";
+        } else if (/^r[1-9A-HJ-NP-Za-km-z]{25,33}$|^r[0-9a-zA-Z]{24,34}$/g.test(source)) {
             //@dev XRP address
             return "xrp";
         } else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/g.test(source)) {
@@ -23,9 +26,6 @@ const Search = async (_address: string) => {
         }  else if (/^(cosmos)[a-z0-9]{39}$/g.test(source)) {
             //@dev Atom Address
             return "atom";
-        } else if (/^T[A-Za-z1-9]{33}$/g.test(source)) {
-            //@dev TRX address
-            return "trx";
         } else if (
             /^(0|(?:[1-9]\d*))\.(0|(?:[1-9]\d*))\.(0|(?:[1-9]\d*))(?:-([a-z]{5}))?$/.test(
                 source
@@ -68,9 +68,6 @@ const Search = async (_address: string) => {
         } else if (/^t1[a-zA-Z0-9]{33}$/g.test(source)) {
             //@dev ZEC address.
             return "zec";
-        } else if (/^r[0-9a-zA-Z]{24,34}$/g.test(source)) {
-            //@dev XRP address.
-            return "xrp";
         } else {
             return "Not Found";
         }
