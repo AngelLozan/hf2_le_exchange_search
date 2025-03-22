@@ -25,6 +25,7 @@ const writerAddress = csvWriter.createObjectCsvWriter({
     header: [{ id: "address", title: "Address" }],
 });
 const addressRecordWriter = (_addresses) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(_addresses);
     const formatted = _addresses.map((addr) => ({ address: addr }));
     yield writerAddress.writeRecords(formatted);
 });
@@ -88,9 +89,9 @@ const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
         return response;
     }
 });
-const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null) {
+const addresses = [];
+const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses = []) {
     const baseUrl = "https://exchange.exodus.io/v3/orders";
-    let addresses = [];
     let toCurrency = [];
     let fromCurrency = [];
     if (_fromAddress !== null)
@@ -168,39 +169,22 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         }, {}));
         yield swapsRecordWriter(mergedData);
         for (const data of mergedData) {
-            if (data.toAddress !== null &&
-                data.toAddress !== "" &&
-                data.toAddress !== undefined &&
-                !addresses.includes(data.toAddress)) {
-                console.log("to addy: ", data.toAddress);
-                addresses.push(data.toAddress);
-            }
-            if (data.fromAddress !== null &&
-                data.fromAddress !== "" &&
-                data.fromAddress !== undefined &&
-                !addresses.includes(data.fromAddress)) {
-                console.log("from addy: ", data.fromAddress);
-                addresses.push(data.fromAddress);
-            }
-            const toCheck = [data.toAddress, data.fromAddress];
-            const allFound = toCheck.every(addr => addresses.includes(addr));
-            if (allFound) {
+            const newAddresses = [data.toAddress, data.fromAddress];
+            const allProcessed = newAddresses.every(addr => addresses.includes(addr));
+            if (allProcessed) {
                 continue;
             }
-            else if (data.toAddress && data.fromAddress) {
-                yield (0, exports.fetchSwapData)(data.fromAddress, data.toAddress, data.to, data.from);
+            if (data.toAddress && !addresses.includes(data.toAddress)) {
+                addresses.push(data.toAddress);
             }
-            else if (data.toAddress && !data.fromAddress) {
-                yield (0, exports.fetchSwapData)(null, data.toAddress, data.to, null);
+            if (data.fromAddress && !addresses.includes(data.fromAddress)) {
+                addresses.push(data.fromAddress);
             }
-            else if (!data.toAddress && data.fromAddress) {
-                yield (0, exports.fetchSwapData)(data.fromAddress, null, null, data.from);
-            }
-            else {
-                yield addressRecordWriter(addresses);
-            }
+            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.to || null, data.from || null, addresses);
         }
         console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
+        yield addressRecordWriter(addresses);
+        console.log("\n\n Addresses: ", addresses);
     }
     catch (error) {
         console.log("Something went wrong with that call", error.message);
@@ -250,7 +234,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
                 });
             }
             else {
-                yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
+                yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null, addresses || []);
             }
         }
         catch (e) {

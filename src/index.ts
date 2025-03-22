@@ -77,6 +77,7 @@ const writerAddress = csvWriter.createObjectCsvWriter({
 });
 
 const addressRecordWriter = async (_addresses: string[]) => {
+	console.log(_addresses);
 	const formatted = _addresses.map((addr) => ({ address: addr }));
 	await writerAddress.writeRecords(formatted);
 };
@@ -147,15 +148,19 @@ const baseFetch = async (_url: string) => {
 	}
 };
 
+const addresses: string[] = [];
+
 // Get swap data from api
 export const fetchSwapData = async (
 	_fromAddress: string | null = null,
 	_toAddress: string | null = null,
 	_toCurrency: string | null = null,
 	_fromCurrency: string | null = null,
+	addresses: string[] = [],
 ) => {
-	const baseUrl = "https://exchange.exodus.io/v3/orders";
-	let addresses: Address[] = [];
+	// const baseUrl = "https://exchange-s.exodus.io/v3/orders"; // Dev
+	const baseUrl = "https://exchange.exodus.io/v3/orders"; // Prod
+	// let addresses: Address[] = [];
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
@@ -286,54 +291,44 @@ export const fetchSwapData = async (
 
 		// Add addresses to sheet 1 & recursive search
 		for (const data of mergedData) {
+			
+			/* 
+				Recursion
+				Kill process if addresses already contained. 
+			*/
+
+			const newAddresses = [data.toAddress, data.fromAddress];
+			const allProcessed = newAddresses.every(addr => addresses.includes(addr));
+
+			/* 
+				Addresses pulled from mergedData array of hashes
+				Check if new addresses are already accounted for (which means we've fetched swap data for them)
+				If not, then add it to the list and fetch swap data for whatever addresses we have (to/from)
+			*/
+
+			if(allProcessed){ continue; }
+
 			// If address exists in each data hash, push it to the sheet
-			if (
-				data.toAddress !== null &&
-				data.toAddress !== "" &&
-				data.toAddress !== undefined &&
-				!addresses.includes(data.toAddress)
-			) {
-				console.log("to addy: ",data.toAddress);
+			if (data.toAddress && !addresses.includes(data.toAddress)) {
 				addresses.push(data.toAddress);
 			}
-			if (
-				data.fromAddress !== null &&
-				data.fromAddress !== "" &&
-				data.fromAddress !== undefined &&
-				!addresses.includes(data.fromAddress)
-			) {
-				console.log("from addy: ",data.fromAddress);
+			if (data.fromAddress && !addresses.includes(data.fromAddress)) {
 				addresses.push(data.fromAddress);
 			}
 
-			// Recursion
-			// Kill process if addresses already contained. 
-			const toCheck = [data.toAddress, data.fromAddress];
-			const allFound = toCheck.every(addr => addresses.includes(addr));
-
-			if(allFound){
-				// process.exit(1);
-				continue;
-			} else if (data.toAddress && data.fromAddress) {
-				await fetchSwapData(
-					data.fromAddress,
-					data.toAddress,
-					data.to,
-					data.from,
-				);
-			} else if (data.toAddress && !data.fromAddress) {
-				await fetchSwapData(null, data.toAddress, data.to, null);
-			} else if (!data.toAddress && data.fromAddress) {
-				await fetchSwapData(data.fromAddress, null, null, data.from);
-			} else {
-				// console.log("No more remaining pairs");
-				// console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
-				await addressRecordWriter(addresses);
-			}
+			// Recursive call
+			await fetchSwapData(
+				data.fromAddress || null,
+				data.toAddress || null,
+				data.to || null,
+				data.from || null,
+				addresses,
+			);
 		}
-		console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
 		// Write unique addresses to sheet 1
-		// console.log("\n\n Addresses: ", addresses);
+		console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
+		await addressRecordWriter(addresses);
+		console.log("\n\n Addresses: ", addresses);
 		
 	} catch (error: any) {
 		console.log("Something went wrong with that call", error.message);
@@ -345,7 +340,6 @@ export const fetchSwapData = async (
 
 async function main() {
 
-	// TO DO: Take list of addresses and treat as individual searches.
 	const args = process.argv.slice(2);
 	console.log(args);
 
@@ -396,6 +390,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 				_toAddress || null,
 				_toCurrency || null,
 				_fromCurrency || null,
+				addresses || [],
 			);
 		}
 	} catch(e: any){
