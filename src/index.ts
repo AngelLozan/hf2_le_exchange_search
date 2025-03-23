@@ -148,7 +148,52 @@ const baseFetch = async (_url: string) => {
 	}
 };
 
+//----------------------------------------
+// Helpers:
+
+function delay(time: number): Promise<void> {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, time)
+    });
+}
+
+async function throttleAll<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency = 2,
+  delayMs = 100
+): Promise<T[]> {
+  const results: T[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (const task of tasks) {
+    const p = (async () => {
+      const result = await task();
+      results.push(result);
+      await delay(delayMs);
+    })();
+
+    executing.push(p);
+
+    if (executing.length >= concurrency) {
+      await Promise.race(executing);
+      executing.splice(0, executing.length); // Clear finished
+    }
+  }
+
+  await Promise.all(executing);
+  return results;
+}
+
 const addresses: string[] = [];
+const normalizeAddress = (addr: string) => addr.trim().toLowerCase();
+
+//----------------------------------------
+
+
+process.on('SIGINT', function() {
+    console.log("Caught interrupt signal");
+    process.exit(0);
+});
 
 // Get swap data from api
 export const fetchSwapData = async (
@@ -156,7 +201,7 @@ export const fetchSwapData = async (
 	_toAddress: string | null = null,
 	_toCurrency: string | null = null,
 	_fromCurrency: string | null = null,
-	addresses: string[] = [],
+	addresses: Address[],
 ) => {
 	// const baseUrl = "https://exchange-s.exodus.io/v3/orders"; // Dev
 	const baseUrl = "https://exchange.exodus.io/v3/orders"; // Prod
@@ -164,20 +209,24 @@ export const fetchSwapData = async (
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
-	if(_fromAddress !== null) addresses.push(_fromAddress);
-	if(_toAddress !== null) addresses.push(_toAddress);
+	if(_fromAddress !== null && !addresses.includes(normalizeAddress(_fromAddress))) addresses.push(normalizeAddress(_fromAddress)); 
+	// if(_fromAddress !== null && !addresses.includes(_fromAddress)) addresses.push(_fromAddress);
+	if(_toAddress !== null && !addresses.includes(normalizeAddress(_toAddress))) addresses.push(normalizeAddress(_toAddress));
+	// if(_toAddress !== null && !addresses.includes(_toAddress)) addresses.push(_toAddress);
 
 	// let evmCurrencies: string[] = [];
 
 	// If currency is null, then need to use cryptoregex to determine based on address
 	if (_toCurrency === null && _toAddress !== null) {
 		const toCoin = await Search(_toAddress); 
-		console.log("===> TO COIN: ", toCoin);
+
 		if(toCoin.length > 1){
+			console.log("===> Checking all EVM assets for TO asset");
 			for(const tC of toCoin){
 				toCurrency.push(tC.toUpperCase());
 			}
 		} else {
+			console.log("===> TO asset: ", toCoin);
 			toCurrency.push(toCoin.toUpperCase());
 		}
 	} else {
@@ -186,12 +235,14 @@ export const fetchSwapData = async (
 
 	if (_fromCurrency === null && _fromAddress !== null) {
 		const fromCoin = await Search(_fromAddress); 
-		console.log("===> FROM COIN: ", fromCoin);
+		
 		if(fromCoin.length > 1){
+			console.log("===> Checking all EVM assets for FROM asset");
 			for(const fC of fromCoin){
 				fromCurrency.push(fC.toUpperCase());
 			}
 		} else {
+			console.log("===> FROM COIN: ", fromCoin);
 			fromCurrency.push(fromCoin.toUpperCase());
 		}
 		
@@ -247,7 +298,12 @@ export const fetchSwapData = async (
 		}
 
 		const responses = await Promise.all(requests);
-		// const dataArrays = await Promise.all(responses.map(res => res!.status === 200 ? res!.json() : console.log("\n\n Swap data not found. \n\n")));
+		// const responses = await throttleAll(
+		//   requests.map((r) => () => r),
+		//   4,      // concurrency: 2 at a time
+		//   100     // delay: 200ms between starts
+		// );
+
 
 		const dataArrays = await Promise.all(
 			responses.map(async (res) => {
@@ -259,7 +315,7 @@ export const fetchSwapData = async (
 					// );
 					return json;
 				} else {
-					console.log("Swap data not found or response error");
+					console.log("===> Swap data not found or response error");
 					return null;
 				}
 			}),
@@ -267,7 +323,7 @@ export const fetchSwapData = async (
 
 		const allResults = dataArrays.flat().filter(Boolean);
 
-		console.log("\n\n DATA ARRAYS: ", dataArrays.flat());
+		console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`);
 
 		/* Array of unique SwapData objects based on the oid field.
     		Example:
@@ -297,7 +353,7 @@ export const fetchSwapData = async (
 				Kill process if addresses already contained. 
 			*/
 
-			const newAddresses = [data.toAddress, data.fromAddress];
+			const newAddresses = [normalizeAddress(data.toAddress), normalizeAddress(data.fromAddress)];
 			const allProcessed = newAddresses.every(addr => addresses.includes(addr));
 
 			/* 
@@ -309,11 +365,11 @@ export const fetchSwapData = async (
 			if(allProcessed){ continue; }
 
 			// If address exists in each data hash, push it to the sheet
-			if (data.toAddress && !addresses.includes(data.toAddress)) {
-				addresses.push(data.toAddress);
+			if (data.toAddress && !addresses.includes(normalizeAddress(data.toAddress)) {
+				addresses.push(normalizeAddress(data.toAddress));
 			}
-			if (data.fromAddress && !addresses.includes(data.fromAddress)) {
-				addresses.push(data.fromAddress);
+			if (data.fromAddress && !addresses.includes(normalizeAddress(data.fromAddress))) {
+				addresses.push(normalizeAddress(data.fromAddress));
 			}
 
 			// Recursive call
@@ -325,14 +381,18 @@ export const fetchSwapData = async (
 				addresses,
 			);
 		}
+
+		
 		// Write unique addresses to sheet 1
-		console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
-		await addressRecordWriter(addresses);
-		console.log("\n\n Addresses: ", addresses);
+		console.log("\n\n ====> ✅ All addresses already logged, writing addresses then exiting.... \n\n");
+		await addressRecordWriter([...new Set(addresses)]);
+		console.log("\n\n Unique Addresses written: ", addresses.length);
+		// process.exit(1);
 		
 	} catch (error: any) {
-		console.log("Something went wrong with that call", error.message);
+		console.log("====> Something went wrong with that call", error.message);
 		logger.info(error);
+		process.exit(1);
 		// Retry can be left to HF2
 	}
 };
@@ -340,8 +400,18 @@ export const fetchSwapData = async (
 
 async function main() {
 
+	const timerAnimation = (function() {
+        var P = ["[\\]", "[|]", "[/]", "[-]"];
+        var start = 0;
+        return setInterval(function() {
+            process.stdout.write("\r" + P[start++]);
+            start &= 3;
+        }, 150);
+    })();
+
+
 	const args = process.argv.slice(2);
-	console.log(args);
+	console.log("\n\n ===> Running search with arguments: ", args);
 
 	let csv_file_path: string | null = null;
 	let _fromAddress: string | null = null;
@@ -352,7 +422,7 @@ async function main() {
 
 	if (args.length < 1) {
 		console.error(`
-Run this command to search, replacing bracketed values. *One address required* 👇:
+\n\n ====> Run this command to search, replacing bracketed values. *One address required* 👇:
 -------------
 npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurrency>
 -------------
@@ -370,7 +440,8 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 		[csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
 	}
 
-	console.log(args);
+	// console.log(args);
+	const allPromises: Promise<void>[] = [];
 
 	try{
 		if(csv_file_path !== null){
@@ -378,12 +449,15 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 			fs.createReadStream(csv_file_path)
 			  .pipe(csv())
 			  .on('data', async (row) => {
-			    console.log(row.ADDRESS);
-			    await fetchSwapData(row.ADDRESS)
+			    console.log("\n\n ==> Searching address: ", row.ADDRESS);
+			   allPromises.push(fetchSwapData(row.ADDRESS, null, null, null, addresses));
 			  })
-			  .on('end', () => {
-			    console.log('CSV file successfully processed');
+			   .on('end', async () => {
+			    console.log('\n\n ====> CSV file successfully processed');
+			    await addressRecordWriter(addresses);
+			    console.log('\n\n ====> ✅ Unique addresses written to file:', addresses.length);
 			  });
+
 		} else {
 			await fetchSwapData(
 				_fromAddress || null,
@@ -394,7 +468,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 			);
 		}
 	} catch(e: any){
-		console.log(`There was an issue with that CSV read: ${e}`);
+		console.log(`=====> There was an issue with that CSV read: ${e}`);
 	}
 	
 }

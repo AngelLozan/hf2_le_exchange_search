@@ -89,24 +89,55 @@ const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
         return response;
     }
 });
+function delay(time) {
+    return new Promise(function (resolve) {
+        setTimeout(resolve, time);
+    });
+}
+function throttleAll(tasks_1) {
+    return __awaiter(this, arguments, void 0, function* (tasks, concurrency = 2, delayMs = 100) {
+        const results = [];
+        const executing = [];
+        for (const task of tasks) {
+            const p = (() => __awaiter(this, void 0, void 0, function* () {
+                const result = yield task();
+                results.push(result);
+                yield delay(delayMs);
+            }))();
+            executing.push(p);
+            if (executing.length >= concurrency) {
+                yield Promise.race(executing);
+                executing.splice(0, executing.length);
+            }
+        }
+        yield Promise.all(executing);
+        return results;
+    });
+}
 const addresses = [];
-const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses = []) {
+const normalizeAddress = (addr) => addr.trim().toLowerCase();
+process.on('SIGINT', function () {
+    console.log("Caught interrupt signal");
+    process.exit(0);
+});
+const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses) {
     const baseUrl = "https://exchange.exodus.io/v3/orders";
     let toCurrency = [];
     let fromCurrency = [];
-    if (_fromAddress !== null)
-        addresses.push(_fromAddress);
-    if (_toAddress !== null)
-        addresses.push(_toAddress);
+    if (_fromAddress !== null && !addresses.includes(normalizeAddress(_fromAddress)))
+        addresses.push(normalizeAddress(_fromAddress));
+    if (_toAddress !== null && !addresses.includes(normalizeAddress(_toAddress)))
+        addresses.push(normalizeAddress(_toAddress));
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
-        console.log("===> TO COIN: ", toCoin);
         if (toCoin.length > 1) {
+            console.log("===> Checking all EVM assets for TO asset");
             for (const tC of toCoin) {
                 toCurrency.push(tC.toUpperCase());
             }
         }
         else {
+            console.log("===> TO asset: ", toCoin);
             toCurrency.push(toCoin.toUpperCase());
         }
     }
@@ -116,13 +147,14 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     }
     if (_fromCurrency === null && _fromAddress !== null) {
         const fromCoin = yield Search(_fromAddress);
-        console.log("===> FROM COIN: ", fromCoin);
         if (fromCoin.length > 1) {
+            console.log("===> Checking all EVM assets for FROM asset");
             for (const fC of fromCoin) {
                 fromCurrency.push(fC.toUpperCase());
             }
         }
         else {
+            console.log("===> FROM COIN: ", fromCoin);
             fromCurrency.push(fromCoin.toUpperCase());
         }
     }
@@ -157,45 +189,54 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
                 return json;
             }
             else {
-                console.log("Swap data not found or response error");
+                console.log("===> Swap data not found or response error");
                 return null;
             }
         })));
         const allResults = dataArrays.flat().filter(Boolean);
-        console.log("\n\n DATA ARRAYS: ", dataArrays.flat());
+        console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`);
         const mergedData = Object.values(allResults.reduce((acc, item) => {
             acc[item.providerOrderId] = item;
             return acc;
         }, {}));
         yield swapsRecordWriter(mergedData);
         for (const data of mergedData) {
-            const newAddresses = [data.toAddress, data.fromAddress];
+            const newAddresses = [normalizeAddress(data.toAddress), normalizeAddress(data.fromAddress)];
             const allProcessed = newAddresses.every(addr => addresses.includes(addr));
             if (allProcessed) {
-                continue;
+                console.log("\n\n ====> ✅ All addresses already logged, writing addresses then exiting.... \n\n");
+                yield addressRecordWriter([...new Set(addresses)]);
+                console.log("\n\n Unique Addresses written: ", addresses.length);
+                process.exit(1);
             }
-            if (data.toAddress && !addresses.includes(data.toAddress)) {
-                addresses.push(data.toAddress);
+            if (data.toAddress && !addresses.includes(normalizeAddress(data.toAddress))) {
+                addresses.push(normalizeAddress(data.toAddress));
             }
-            if (data.fromAddress && !addresses.includes(data.fromAddress)) {
-                addresses.push(data.fromAddress);
+            if (data.fromAddress && !addresses.includes(normalizeAddress(data.fromAddress))) {
+                addresses.push(normalizeAddress(data.fromAddress));
             }
             yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.to || null, data.from || null, addresses);
         }
-        console.log("\n\n✅ All addresses already logged, writing addresses then exiting.... \n\n");
-        yield addressRecordWriter(addresses);
-        console.log("\n\n Addresses: ", addresses);
     }
     catch (error) {
-        console.log("Something went wrong with that call", error.message);
+        console.log("====> Something went wrong with that call", error.message);
         logger.info(error);
+        process.exit(1);
     }
 });
 exports.fetchSwapData = fetchSwapData;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
+        const timerAnimation = (function () {
+            var P = ["[\\]", "[|]", "[/]", "[-]"];
+            var start = 0;
+            return setInterval(function () {
+                process.stdout.write("\r" + P[start++]);
+                start &= 3;
+            }, 150);
+        })();
         const args = process.argv.slice(2);
-        console.log(args);
+        console.log("\n\n ===> Running search with arguments: ", args);
         let csv_file_path = null;
         let _fromAddress = null;
         let _toAddress = null;
@@ -203,7 +244,7 @@ function main() {
         let _fromCurrency = null;
         if (args.length < 1) {
             console.error(`
-Run this command to search, replacing bracketed values. *One address required* 👇:
+\n\n ====> Run this command to search, replacing bracketed values. *One address required* 👇:
 -------------
 npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurrency>
 -------------
@@ -220,25 +261,27 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
         else {
             [csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
         }
-        console.log(args);
+        const allPromises = [];
         try {
             if (csv_file_path !== null) {
                 fs_1.default.createReadStream(csv_file_path)
                     .pipe((0, csv_parser_1.default)())
                     .on('data', (row) => __awaiter(this, void 0, void 0, function* () {
-                    console.log(row.ADDRESS);
-                    yield (0, exports.fetchSwapData)(row.ADDRESS);
+                    console.log("\n\n ==> Searching address: ", row.ADDRESS);
+                    allPromises.push((0, exports.fetchSwapData)(row.ADDRESS, null, null, null, addresses));
                 }))
-                    .on('end', () => {
-                    console.log('CSV file successfully processed');
-                });
+                    .on('end', () => __awaiter(this, void 0, void 0, function* () {
+                    console.log('\n\n ====> CSV file successfully processed');
+                    yield addressRecordWriter(addresses);
+                    console.log('\n\n ====> ✅ Unique addresses written to file:', addresses.length);
+                }));
             }
             else {
                 yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null, addresses || []);
             }
         }
         catch (e) {
-            console.log(`There was an issue with that CSV read: ${e}`);
+            console.log(`=====> There was an issue with that CSV read: ${e}`);
         }
     });
 }
