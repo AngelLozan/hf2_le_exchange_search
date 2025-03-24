@@ -114,12 +114,12 @@ tsc
 ### 4. Usage:
 
 - Order of arguments is important. If you have one argument and not the other separating two, then use a space and an empty string `''`
-- Structure the CSV, if path passed, to have one header value named `ADDRESS` under which all addresses you wish to check are located.
+- Structure the CSV, if path passed, to have one header value named `Address` under which all addresses you wish to check are located. *`Address` is case sensitive*
 
 ex: 
 
 ```csv
-ADDRESS
+Address
 0x.......
 TR.....
 bc1......
@@ -133,6 +133,13 @@ Full implementation with all parameters possible in the designated order:
 npm run search '<path_to_csv_of_addresses>' '<fromAddress>' '<toAddress>' '<toCurrency>' '<fromCurrency>'
 ```
 
+
+Search based on CSV of addresses:
+
+```zsh
+npm run search '<path_to_csv_of_addresses>'
+```
+
 Example where you have no CSV but you have a `fromAddress` and nothing else (ie. the other parameters will be `null`):
 
 ```zsh
@@ -140,5 +147,9 @@ npm run search '' '<fromAddress>'
 ```
 
 
+With only single addresses and currencies:
 
+```zsh
+npm run search '' '<fromAddress>' '<toAddress>' '<toCurrency>' '<fromCurrency>'
+```
 

@@ -264,7 +264,7 @@ function main() {
 npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurrency>
 -------------
         `);
-            process.exit(1);
+            process.exit(0);
         }
         else if (args.length === 1) {
             csv_file_path = args[0];
@@ -284,7 +284,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
                 fs_1.default.createReadStream(csv_file_path)
                     .pipe((0, csv_parser_1.default)())
                     .on("data", (row) => {
-                    addressesToProcess.push(row.ADDRESS);
+                    addressesToProcess.push(row.Address);
                 })
                     .on("end", () => __awaiter(this, void 0, void 0, function* () {
                     console.log("\n\n ====> CSV file successfully processed");
