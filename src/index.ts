@@ -184,7 +184,7 @@ async function throttleAll<T>(
 	return results;
 }
 
-const addresses: Set<string> = new Set();
+
 const normalizeAddress = (addr: string) => addr.trim().toLowerCase();
 
 //----------------------------------------
@@ -201,12 +201,14 @@ export const fetchSwapData = async (
 	_toCurrency: string | null = null,
 	_fromCurrency: string | null = null,
 	addresses: Address[],
+	seenSwaps: Set<string>
 ) => {
 	// const baseUrl = "https://exchange-s.exodus.io/v3/orders"; // Dev
 	const baseUrl = "https://exchange.exodus.io/v3/orders"; // Prod
 	// let addresses: Address[] = [];
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
+
 
 	if (
 		_fromAddress !== null &&
@@ -334,7 +336,7 @@ export const fetchSwapData = async (
 		const allResults = dataArrays.flat().filter(Boolean);
 
 		console.log(
-			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`,
+			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n ========================================================== \n`,
 		);
 
 		/* Array of unique SwapData objects based on the oid field.
@@ -349,66 +351,59 @@ export const fetchSwapData = async (
 			allResults.reduce((acc, item) => {
 				acc[item.providerOrderId] = item;
 				return acc;
-			}, {}),
+			}, {} as Record<string, SwapData>),
 		);
 
 		// console.log("Merged data:", JSON.stringify(mergedData, null, 2));
+		const uniqueSwaps = mergedData.filter(
+		  (data) => !seenSwaps.has(data.providerOrderId)
+		);
+
+		// EXIT 
+		if (uniqueSwaps.length === 0) {
+		  console.log("\n\n ===> No new swaps found. Exiting recursion. \n\n");
+		  // process.exit(1);
+		  return true;
+		}
+
+		uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
 
 		// Add swap data to sheet 2
-		await swapsRecordWriter(mergedData);
+		console.log(`n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
+		await swapsRecordWriter(uniqueSwaps);
+
 
 		// Add addresses to sheet 1 & recursive search
-		for (const data of mergedData) {
-			/* 
-				Recursion
-				Kill process if addresses already contained. 
-			*/
+		for (const data of uniqueSwaps) {
+			const normFrom = normalizeAddress(data.fromAddress);
+			const normTo = normalizeAddress(data.toAddress);
 
-			const newAddresses = [
-				normalizeAddress(data.toAddress),
-				normalizeAddress(data.fromAddress),
-			];
-			const allProcessed = newAddresses.every((addr) =>
-				addresses.includes(addr),
-			);
+			const newAddresses = [normFrom, normTo];
+			const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
 
-			/* 
-				Addresses pulled from mergedData array of hashes
-				Check if new addresses are already accounted for (which means we've fetched swap data for them)
-				If not, then add it to the list and fetch swap data for whatever addresses we have (to/from)
-			*/
-
-			if (allProcessed) {
+			if (unseen.length === 0) {
 				continue;
 			}
 
-			// If address exists in each data hash, push it to the sheet
-			if (
-				data.toAddress &&
-				!addresses.includes(normalizeAddress(data.toAddress))
-			) {
-				addresses.push(normalizeAddress(data.toAddress));
-			}
+			// Add all unseen addresses
+			unseen.forEach((addr) => addresses.push(addr));
 
-			if (
-				data.fromAddress &&
-				!addresses.includes(normalizeAddress(data.fromAddress))
-			) {
-				addresses.push(normalizeAddress(data.fromAddress));
-			}
+			console.log(`New addresses discovered: ${unseen.join(", ")}`);
 
-			// Recursive call
+			// Recusion
 			await fetchSwapData(
 				data.fromAddress || null,
 				data.toAddress || null,
 				data.to || null,
 				data.from || null,
 				addresses,
+				seenSwaps
 			);
 		}
 
-		return true;
+		// return true;
 		console.log("\n\n Unique Addresses: ", addresses.length);
+		return true;
 		// process.exit(1);
 	} catch (error: any) {
 		console.log("====> Something went wrong with that call", error.message);
@@ -425,10 +420,13 @@ export const crawlSwapData = async (
 	fromAsset?: string,
 ) => {
 	const addresses: Address[] = [];
-	await fetchSwapData(from, to, toAsset, fromAsset, addresses);
+  	const seenSwaps: Set<string> = new Set();
+
+	await fetchSwapData(from, to, toAsset, fromAsset, addresses, seenSwaps);
 	console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
 	await addressRecordWriter([...new Set(addresses)]);
 	console.log("\n\n Unique Addresses written: ", addresses.length);
+	process.exit(0);
 };
 
 async function main() {

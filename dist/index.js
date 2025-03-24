@@ -114,13 +114,12 @@ function throttleAll(tasks_1) {
         return results;
     });
 }
-const addresses = new Set();
 const normalizeAddress = (addr) => addr.trim().toLowerCase();
 process.on("SIGINT", function () {
     console.log("Caught interrupt signal");
     process.exit(0);
 });
-const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses) {
+const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses, seenSwaps) {
     const baseUrl = "https://exchange.exodus.io/v3/orders";
     let toCurrency = [];
     let fromCurrency = [];
@@ -196,33 +195,33 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
             }
         })));
         const allResults = dataArrays.flat().filter(Boolean);
-        console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`);
+        console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n ========================================================== \n`);
         const mergedData = Object.values(allResults.reduce((acc, item) => {
             acc[item.providerOrderId] = item;
             return acc;
         }, {}));
-        yield swapsRecordWriter(mergedData);
-        for (const data of mergedData) {
-            const newAddresses = [
-                normalizeAddress(data.toAddress),
-                normalizeAddress(data.fromAddress),
-            ];
-            const allProcessed = newAddresses.every((addr) => addresses.includes(addr));
-            if (allProcessed) {
+        const uniqueSwaps = mergedData.filter((data) => !seenSwaps.has(data.providerOrderId));
+        if (uniqueSwaps.length === 0) {
+            console.log("\n\n ===> No new swaps found. Exiting recursion. \n\n");
+            return true;
+        }
+        uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
+        console.log(`n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
+        yield swapsRecordWriter(uniqueSwaps);
+        for (const data of uniqueSwaps) {
+            const normFrom = normalizeAddress(data.fromAddress);
+            const normTo = normalizeAddress(data.toAddress);
+            const newAddresses = [normFrom, normTo];
+            const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
+            if (unseen.length === 0) {
                 continue;
             }
-            if (data.toAddress &&
-                !addresses.includes(normalizeAddress(data.toAddress))) {
-                addresses.push(normalizeAddress(data.toAddress));
-            }
-            if (data.fromAddress &&
-                !addresses.includes(normalizeAddress(data.fromAddress))) {
-                addresses.push(normalizeAddress(data.fromAddress));
-            }
-            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.to || null, data.from || null, addresses);
+            unseen.forEach((addr) => addresses.push(addr));
+            console.log(`New addresses discovered: ${unseen.join(", ")}`);
+            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.to || null, data.from || null, addresses, seenSwaps);
         }
-        return true;
         console.log("\n\n Unique Addresses: ", addresses.length);
+        return true;
     }
     catch (error) {
         console.log("====> Something went wrong with that call", error.message);
@@ -233,10 +232,12 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
 exports.fetchSwapData = fetchSwapData;
 const crawlSwapData = (from, to, toAsset, fromAsset) => __awaiter(void 0, void 0, void 0, function* () {
     const addresses = [];
-    yield (0, exports.fetchSwapData)(from, to, toAsset, fromAsset, addresses);
+    const seenSwaps = new Set();
+    yield (0, exports.fetchSwapData)(from, to, toAsset, fromAsset, addresses, seenSwaps);
     console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
     yield addressRecordWriter([...new Set(addresses)]);
     console.log("\n\n Unique Addresses written: ", addresses.length);
+    process.exit(0);
 });
 exports.crawlSwapData = crawlSwapData;
 function main() {
