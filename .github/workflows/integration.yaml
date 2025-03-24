@@ -10,8 +10,6 @@ on: [push]
 
 jobs:
   test:
-    env:
-      # BUCKET: ${{ secrets.SCAMHITLIST_TEST_BUCKET }}
     runs-on: ubuntu-latest
 
     steps:
