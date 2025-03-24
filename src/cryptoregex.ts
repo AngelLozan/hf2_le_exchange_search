@@ -137,30 +137,4 @@ const evmFetch = async (): Promise<string[] | null> => {
 
 module.exports = { Search };
 
- // {
- //    "id": "ZROethereumarbone4264C898",
- //    "name": "LayerZero",
- //    "network": "ethereumarbone",
- //    "decimals": 18,
- //    "symbol": "ZRO",
- //    "meta": {
- //      "contractAddress": "0x6985884c4392d348587b19cb9eaaf157f13271cd"
- //    },
- //    "ethereumarbone": {
- //      "contractAddress": "0x6985884c4392d348587b19cb9eaaf157f13271cd"
- //    }
- //  },
 
-
-
-// else if (/^(bnb)[a-z0-9]{38}$/g.test(source)) {
-//             //@dev BNB Beacon Address
-//            return "bnb";
-//         } else if (
-//     /^grs[a-zA-Z0-9]{5,88}$|^F[a-km-zA-HJ-NP-Z1-9]{26,33}$|^G[A-Z0-9]{55}$|^[7X][a-km-zA-HJ-NP-Z1-9]{26,33}$|^[9AD][a-km-zA-HJ-NP-Z1-9]{26,33}$|^([qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120}|(bitcoincash)?[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,120})$|^bc(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87})$|^1[a-km-zA-HJ-NP-Z1-9]{25,34}(?!\/)$|^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/g.test(
-//         source
-//     )
-// ) {
-//     // TO DO: Break into separate regexs to return specific asset. Most chains addresses. Needs to stay last so other regex's work. Includes DASH, DOGE, XMR, BCH and BTC derivations.
-//     return true;
-// }
