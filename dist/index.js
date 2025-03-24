@@ -67,7 +67,11 @@ const writerSwap = csvWriter.createObjectCsvWriter({
     ],
 });
 const swapsRecordWriter = (_swaps) => __awaiter(void 0, void 0, void 0, function* () {
-    yield writerSwap.writeRecords(_swaps);
+    const formatted = _swaps.map((swap) => {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+        return (Object.assign(Object.assign({}, swap), { from: (_a = swap.amount) === null || _a === void 0 ? void 0 : _a.assetId, to: (_b = swap.toAmount) === null || _b === void 0 ? void 0 : _b.assetId, fromAmt: (_c = swap.amount) === null || _c === void 0 ? void 0 : _c.value, fromAmtStr: (_d = swap.amount) === null || _d === void 0 ? void 0 : _d.value, fromAmtUSD: (_e = swap.amount) === null || _e === void 0 ? void 0 : _e.value, toAmt: (_f = swap.toAmount) === null || _f === void 0 ? void 0 : _f.value, toAmtStr: (_g = swap.toAmount) === null || _g === void 0 ? void 0 : _g.value, toAmtUSD: (_h = swap.toAmount) === null || _h === void 0 ? void 0 : _h.value, amount: `${(_j = swap.amount) === null || _j === void 0 ? void 0 : _j.value} ${(_k = swap.amount) === null || _k === void 0 ? void 0 : _k.assetId}`, toAmount: `${(_l = swap.toAmount) === null || _l === void 0 ? void 0 : _l.value} ${(_m = swap.toAmount) === null || _m === void 0 ? void 0 : _m.assetId}` }));
+    });
+    yield writerSwap.writeRecords(formatted);
 });
 const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
     let response;

@@ -123,8 +123,22 @@ const writerSwap = csvWriter.createObjectCsvWriter({
 });
 
 const swapsRecordWriter = async (_swaps: SwapData[]) => {
-	await writerSwap.writeRecords(_swaps);
+	const formatted = _swaps.map((swap) => ({
+		...swap,
+		from: swap.amount?.assetId,
+		to: swap.toAmount?.assetId,
+		fromAmt: swap.amount?.value,
+		fromAmtStr: swap.amount?.value,
+		fromAmtUSD: swap.amount?.value,
+		toAmt: swap.toAmount?.value,
+		toAmtStr: swap.toAmount?.value,
+		toAmtUSD: swap.toAmount?.value,
+		amount: `${swap.amount?.value} ${swap.amount?.assetId}`,
+		toAmount: `${swap.toAmount?.value} ${swap.toAmount?.assetId}`,
+	}));
+	await writerSwap.writeRecords(formatted);
 };
+
 
 const baseFetch = async (_url: string) => {
 	let response;
