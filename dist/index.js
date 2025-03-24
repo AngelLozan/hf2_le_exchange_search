@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchSwapData = void 0;
+exports.crawlSwapData = exports.fetchSwapData = void 0;
 const csvWriter = require("csv-writer");
 const { Search } = require("./cryptoregex");
 const path_1 = __importDefault(require("path"));
@@ -114,9 +114,9 @@ function throttleAll(tasks_1) {
         return results;
     });
 }
-const addresses = [];
+const addresses = new Set();
 const normalizeAddress = (addr) => addr.trim().toLowerCase();
-process.on('SIGINT', function () {
+process.on("SIGINT", function () {
     console.log("Caught interrupt signal");
     process.exit(0);
 });
@@ -124,9 +124,11 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     const baseUrl = "https://exchange.exodus.io/v3/orders";
     let toCurrency = [];
     let fromCurrency = [];
-    if (_fromAddress !== null && !addresses.includes(normalizeAddress(_fromAddress)))
+    if (_fromAddress !== null &&
+        !addresses.includes(normalizeAddress(_fromAddress)))
         addresses.push(normalizeAddress(_fromAddress));
-    if (_toAddress !== null && !addresses.includes(normalizeAddress(_toAddress)))
+    if (_toAddress !== null &&
+        !addresses.includes(normalizeAddress(_toAddress)))
         addresses.push(normalizeAddress(_toAddress));
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
@@ -201,22 +203,26 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         }, {}));
         yield swapsRecordWriter(mergedData);
         for (const data of mergedData) {
-            const newAddresses = [normalizeAddress(data.toAddress), normalizeAddress(data.fromAddress)];
-            const allProcessed = newAddresses.every(addr => addresses.includes(addr));
+            const newAddresses = [
+                normalizeAddress(data.toAddress),
+                normalizeAddress(data.fromAddress),
+            ];
+            const allProcessed = newAddresses.every((addr) => addresses.includes(addr));
             if (allProcessed) {
-                console.log("\n\n ====> ✅ All addresses already logged, writing addresses then exiting.... \n\n");
-                yield addressRecordWriter([...new Set(addresses)]);
-                console.log("\n\n Unique Addresses written: ", addresses.length);
-                process.exit(1);
+                continue;
             }
-            if (data.toAddress && !addresses.includes(normalizeAddress(data.toAddress))) {
+            if (data.toAddress &&
+                !addresses.includes(normalizeAddress(data.toAddress))) {
                 addresses.push(normalizeAddress(data.toAddress));
             }
-            if (data.fromAddress && !addresses.includes(normalizeAddress(data.fromAddress))) {
+            if (data.fromAddress &&
+                !addresses.includes(normalizeAddress(data.fromAddress))) {
                 addresses.push(normalizeAddress(data.fromAddress));
             }
             yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.to || null, data.from || null, addresses);
         }
+        return true;
+        console.log("\n\n Unique Addresses: ", addresses.length);
     }
     catch (error) {
         console.log("====> Something went wrong with that call", error.message);
@@ -225,6 +231,14 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     }
 });
 exports.fetchSwapData = fetchSwapData;
+const crawlSwapData = (from, to, toAsset, fromAsset) => __awaiter(void 0, void 0, void 0, function* () {
+    const addresses = [];
+    yield (0, exports.fetchSwapData)(from, to, toAsset, fromAsset, addresses);
+    console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
+    yield addressRecordWriter([...new Set(addresses)]);
+    console.log("\n\n Unique Addresses written: ", addresses.length);
+});
+exports.crawlSwapData = crawlSwapData;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const timerAnimation = (function () {
@@ -259,25 +273,29 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
             _toAddress = args[1];
         }
         else {
-            [csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
+            [csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] =
+                args.map((arg) => (arg === "" ? null : arg));
         }
         const allPromises = [];
         try {
             if (csv_file_path !== null) {
+                const addressesToProcess = [];
                 fs_1.default.createReadStream(csv_file_path)
                     .pipe((0, csv_parser_1.default)())
-                    .on('data', (row) => __awaiter(this, void 0, void 0, function* () {
-                    console.log("\n\n ==> Searching address: ", row.ADDRESS);
-                    allPromises.push((0, exports.fetchSwapData)(row.ADDRESS, null, null, null, addresses));
-                }))
-                    .on('end', () => __awaiter(this, void 0, void 0, function* () {
-                    console.log('\n\n ====> CSV file successfully processed');
-                    yield addressRecordWriter(addresses);
-                    console.log('\n\n ====> ✅ Unique addresses written to file:', addresses.length);
+                    .on("data", (row) => {
+                    addressesToProcess.push(row.ADDRESS);
+                })
+                    .on("end", () => __awaiter(this, void 0, void 0, function* () {
+                    console.log("\n\n ====> CSV file successfully processed");
+                    for (const addr of addressesToProcess) {
+                        console.log("\n\n ==> Searching address: ", addr);
+                        yield (0, exports.crawlSwapData)(addr);
+                    }
+                    console.log("\n\n ====> ✅ All recursive searches completed.");
                 }));
             }
             else {
-                yield (0, exports.fetchSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null, addresses || []);
+                yield (0, exports.crawlSwapData)(_fromAddress || undefined, _toAddress || undefined, _toCurrency || undefined, _fromCurrency || undefined);
             }
         }
         catch (e) {

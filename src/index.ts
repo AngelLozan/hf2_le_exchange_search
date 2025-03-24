@@ -5,7 +5,7 @@ import pino from "pino";
 import fs from "fs";
 const logger = pino();
 // const csv = require('csv-parser');
-import csv from 'csv-parser';
+import csv from "csv-parser";
 
 type AmountData = {
 	assetId: string;
@@ -152,47 +152,46 @@ const baseFetch = async (_url: string) => {
 // Helpers:
 
 function delay(time: number): Promise<void> {
-    return new Promise(function(resolve) {
-        setTimeout(resolve, time)
-    });
+	return new Promise(function (resolve) {
+		setTimeout(resolve, time);
+	});
 }
 
 async function throttleAll<T>(
-  tasks: (() => Promise<T>)[],
-  concurrency = 2,
-  delayMs = 100
+	tasks: (() => Promise<T>)[],
+	concurrency = 2,
+	delayMs = 100,
 ): Promise<T[]> {
-  const results: T[] = [];
-  const executing: Promise<void>[] = [];
+	const results: T[] = [];
+	const executing: Promise<void>[] = [];
 
-  for (const task of tasks) {
-    const p = (async () => {
-      const result = await task();
-      results.push(result);
-      await delay(delayMs);
-    })();
+	for (const task of tasks) {
+		const p = (async () => {
+			const result = await task();
+			results.push(result);
+			await delay(delayMs);
+		})();
 
-    executing.push(p);
+		executing.push(p);
 
-    if (executing.length >= concurrency) {
-      await Promise.race(executing);
-      executing.splice(0, executing.length); // Clear finished
-    }
-  }
+		if (executing.length >= concurrency) {
+			await Promise.race(executing);
+			executing.splice(0, executing.length); // Clear finished
+		}
+	}
 
-  await Promise.all(executing);
-  return results;
+	await Promise.all(executing);
+	return results;
 }
 
-const addresses: string[] = [];
+const addresses: Set<string> = new Set();
 const normalizeAddress = (addr: string) => addr.trim().toLowerCase();
 
 //----------------------------------------
 
-
-process.on('SIGINT', function() {
-    console.log("Caught interrupt signal");
-    process.exit(0);
+process.on("SIGINT", function () {
+	console.log("Caught interrupt signal");
+	process.exit(0);
 });
 
 // Get swap data from api
@@ -209,20 +208,28 @@ export const fetchSwapData = async (
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
-	if(_fromAddress !== null && !addresses.includes(normalizeAddress(_fromAddress))) addresses.push(normalizeAddress(_fromAddress)); 
+	if (
+		_fromAddress !== null &&
+		!addresses.includes(normalizeAddress(_fromAddress))
+	)
+		addresses.push(normalizeAddress(_fromAddress));
 	// if(_fromAddress !== null && !addresses.includes(_fromAddress)) addresses.push(_fromAddress);
-	if(_toAddress !== null && !addresses.includes(normalizeAddress(_toAddress))) addresses.push(normalizeAddress(_toAddress));
+	if (
+		_toAddress !== null &&
+		!addresses.includes(normalizeAddress(_toAddress))
+	)
+		addresses.push(normalizeAddress(_toAddress));
 	// if(_toAddress !== null && !addresses.includes(_toAddress)) addresses.push(_toAddress);
 
 	// let evmCurrencies: string[] = [];
 
 	// If currency is null, then need to use cryptoregex to determine based on address
 	if (_toCurrency === null && _toAddress !== null) {
-		const toCoin = await Search(_toAddress); 
+		const toCoin = await Search(_toAddress);
 
-		if(toCoin.length > 1){
+		if (toCoin.length > 1) {
 			console.log("===> Checking all EVM assets for TO asset");
-			for(const tC of toCoin){
+			for (const tC of toCoin) {
 				toCurrency.push(tC.toUpperCase());
 			}
 		} else {
@@ -234,18 +241,17 @@ export const fetchSwapData = async (
 	}
 
 	if (_fromCurrency === null && _fromAddress !== null) {
-		const fromCoin = await Search(_fromAddress); 
-		
-		if(fromCoin.length > 1){
+		const fromCoin = await Search(_fromAddress);
+
+		if (fromCoin.length > 1) {
 			console.log("===> Checking all EVM assets for FROM asset");
-			for(const fC of fromCoin){
+			for (const fC of fromCoin) {
 				fromCurrency.push(fC.toUpperCase());
 			}
 		} else {
 			console.log("===> FROM COIN: ", fromCoin);
 			fromCurrency.push(fromCoin.toUpperCase());
 		}
-		
 	} else {
 		if (_fromCurrency !== null)
 			fromCurrency.push(_fromCurrency.toUpperCase());
@@ -254,7 +260,6 @@ export const fetchSwapData = async (
 	let requests: Promise<Response | undefined>[] = [];
 
 	try {
-
 		/*
 			Request url examples:
 			https://exchange.exodus.io/v3/orders?toAddress=31muhDdxQEE7E2MUUF3qunAKr4NR4Tn1Qy&toAsset=BTC
@@ -263,19 +268,25 @@ export const fetchSwapData = async (
 
 		if (toCurrency.length === 1 && fromCurrency.length === 1) {
 			if (_fromAddress)
-				console.log("URL before request FROM", `${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`);
-				requests.push(
-					baseFetch(
-						`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`,
-					),
+				console.log(
+					"URL before request FROM",
+					`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`,
 				);
+			requests.push(
+				baseFetch(
+					`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`,
+				),
+			);
 			if (_toAddress)
-				console.log("URL before request TO", `${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`)
-				requests.push(
-					baseFetch(
-						`${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`,
-					),
+				console.log(
+					"URL before request TO",
+					`${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`,
 				);
+			requests.push(
+				baseFetch(
+					`${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`,
+				),
+			);
 		} else {
 			//Handle multiple currencies with multiple requests
 			toCurrency.forEach((tCoin) => {
@@ -304,7 +315,6 @@ export const fetchSwapData = async (
 		//   100     // delay: 200ms between starts
 		// );
 
-
 		const dataArrays = await Promise.all(
 			responses.map(async (res) => {
 				if (res && res.status === 200) {
@@ -323,7 +333,9 @@ export const fetchSwapData = async (
 
 		const allResults = dataArrays.flat().filter(Boolean);
 
-		console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`);
+		console.log(
+			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`,
+		);
 
 		/* Array of unique SwapData objects based on the oid field.
     		Example:
@@ -347,14 +359,18 @@ export const fetchSwapData = async (
 
 		// Add addresses to sheet 1 & recursive search
 		for (const data of mergedData) {
-			
 			/* 
 				Recursion
 				Kill process if addresses already contained. 
 			*/
 
-			const newAddresses = [normalizeAddress(data.toAddress), normalizeAddress(data.fromAddress)];
-			const allProcessed = newAddresses.every(addr => addresses.includes(addr));
+			const newAddresses = [
+				normalizeAddress(data.toAddress),
+				normalizeAddress(data.fromAddress),
+			];
+			const allProcessed = newAddresses.every((addr) =>
+				addresses.includes(addr),
+			);
 
 			/* 
 				Addresses pulled from mergedData array of hashes
@@ -362,13 +378,22 @@ export const fetchSwapData = async (
 				If not, then add it to the list and fetch swap data for whatever addresses we have (to/from)
 			*/
 
-			if(allProcessed){ continue; }
+			if (allProcessed) {
+				continue;
+			}
 
 			// If address exists in each data hash, push it to the sheet
-			if (data.toAddress && !addresses.includes(normalizeAddress(data.toAddress)) {
+			if (
+				data.toAddress &&
+				!addresses.includes(normalizeAddress(data.toAddress))
+			) {
 				addresses.push(normalizeAddress(data.toAddress));
 			}
-			if (data.fromAddress && !addresses.includes(normalizeAddress(data.fromAddress))) {
+
+			if (
+				data.fromAddress &&
+				!addresses.includes(normalizeAddress(data.fromAddress))
+			) {
 				addresses.push(normalizeAddress(data.fromAddress));
 			}
 
@@ -382,13 +407,9 @@ export const fetchSwapData = async (
 			);
 		}
 
-		
-		// Write unique addresses to sheet 1
-		console.log("\n\n ====> ✅ All addresses already logged, writing addresses then exiting.... \n\n");
-		await addressRecordWriter([...new Set(addresses)]);
-		console.log("\n\n Unique Addresses written: ", addresses.length);
+		return true;
+		console.log("\n\n Unique Addresses: ", addresses.length);
 		// process.exit(1);
-		
 	} catch (error: any) {
 		console.log("====> Something went wrong with that call", error.message);
 		logger.info(error);
@@ -397,18 +418,28 @@ export const fetchSwapData = async (
 	}
 };
 
+export const crawlSwapData = async (
+	from?: string,
+	to?: string,
+	toAsset?: string,
+	fromAsset?: string,
+) => {
+	const addresses: Address[] = [];
+	await fetchSwapData(from, to, toAsset, fromAsset, addresses);
+	console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
+	await addressRecordWriter([...new Set(addresses)]);
+	console.log("\n\n Unique Addresses written: ", addresses.length);
+};
 
 async function main() {
-
-	const timerAnimation = (function() {
-        var P = ["[\\]", "[|]", "[/]", "[-]"];
-        var start = 0;
-        return setInterval(function() {
-            process.stdout.write("\r" + P[start++]);
-            start &= 3;
-        }, 150);
-    })();
-
+	const timerAnimation = (function () {
+		var P = ["[\\]", "[|]", "[/]", "[-]"];
+		var start = 0;
+		return setInterval(function () {
+			process.stdout.write("\r" + P[start++]);
+			start &= 3;
+		}, 150);
+	})();
 
 	const args = process.argv.slice(2);
 	console.log("\n\n ===> Running search with arguments: ", args);
@@ -419,7 +450,6 @@ async function main() {
 	let _toCurrency: string | null = null;
 	let _fromCurrency: string | null = null;
 
-
 	if (args.length < 1) {
 		console.error(`
 \n\n ====> Run this command to search, replacing bracketed values. *One address required* 👇:
@@ -428,49 +458,55 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 -------------
         `);
 		process.exit(1);
-	} else if(args.length === 1){
+	} else if (args.length === 1) {
 		// CSV file of addresses
-		csv_file_path = args[0]
+		csv_file_path = args[0];
 	} else if (args.length === 2) {
 		// If only address and only one, use it for both to/from address
 		_fromAddress = args[1];
 		_toAddress = args[1];
 	} else {
 		// [_fromAddress, _toAddress, _toCurrency, _fromCurrency] = args;
-		[csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] = args.map(arg => arg === '' ? null : arg);
+		[csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] =
+			args.map((arg) => (arg === "" ? null : arg));
 	}
 
 	// console.log(args);
 	const allPromises: Promise<void>[] = [];
 
-	try{
-		if(csv_file_path !== null){
+	try {
+		if (csv_file_path !== null) {
 			//Iterate csv file of addresses
-			fs.createReadStream(csv_file_path)
-			  .pipe(csv())
-			  .on('data', async (row) => {
-			    console.log("\n\n ==> Searching address: ", row.ADDRESS);
-			   allPromises.push(fetchSwapData(row.ADDRESS, null, null, null, addresses));
-			  })
-			   .on('end', async () => {
-			    console.log('\n\n ====> CSV file successfully processed');
-			    await addressRecordWriter(addresses);
-			    console.log('\n\n ====> ✅ Unique addresses written to file:', addresses.length);
-			  });
+			const addressesToProcess: string[] = [];
 
+			fs.createReadStream(csv_file_path)
+				.pipe(csv())
+				.on("data", (row) => {
+					addressesToProcess.push(row.ADDRESS);
+				})
+				.on("end", async () => {
+					console.log("\n\n ====> CSV file successfully processed");
+
+					for (const addr of addressesToProcess) {
+						console.log("\n\n ==> Searching address: ", addr);
+						await crawlSwapData(addr);
+					}
+
+					console.log(
+						"\n\n ====> ✅ All recursive searches completed.",
+					);
+				});
 		} else {
-			await fetchSwapData(
-				_fromAddress || null,
-				_toAddress || null,
-				_toCurrency || null,
-				_fromCurrency || null,
-				addresses || [],
+			await crawlSwapData(
+				_fromAddress || undefined,
+				_toAddress || undefined,
+				_toCurrency || undefined,
+				_fromCurrency || undefined,
 			);
 		}
-	} catch(e: any){
+	} catch (e: any) {
 		console.log(`=====> There was an issue with that CSV read: ${e}`);
 	}
-	
 }
 
 if (require.main === module) {
