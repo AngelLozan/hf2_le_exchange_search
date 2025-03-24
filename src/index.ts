@@ -139,7 +139,6 @@ const baseFetch = async (_url: string) => {
 				"App-Version": "1.0.0",
 			},
 		});
-		// console.log("\n\n RESPONSE: ", response);
 		return response;
 	} catch (error: any) {
 		console.log("Something went wrong base fetch:", error);
@@ -215,7 +214,6 @@ export const fetchSwapData = async (
 		!addresses.includes(normalizeAddress(_fromAddress))
 	)
 		addresses.push(normalizeAddress(_fromAddress));
-	// if(_fromAddress !== null && !addresses.includes(_fromAddress)) addresses.push(_fromAddress);
 	if (
 		_toAddress !== null &&
 		!addresses.includes(normalizeAddress(_toAddress))
@@ -223,7 +221,6 @@ export const fetchSwapData = async (
 		addresses.push(normalizeAddress(_toAddress));
 	// if(_toAddress !== null && !addresses.includes(_toAddress)) addresses.push(_toAddress);
 
-	// let evmCurrencies: string[] = [];
 
 	// If currency is null, then need to use cryptoregex to determine based on address
 	if (_toCurrency === null && _toAddress !== null) {
@@ -311,6 +308,9 @@ export const fetchSwapData = async (
 		}
 
 		const responses = await Promise.all(requests);
+		
+		// Throttling with limited concurrency and delays
+
 		// const responses = await throttleAll(
 		//   requests.map((r) => () => r),
 		//   4,      // concurrency: 2 at a time
@@ -359,10 +359,9 @@ export const fetchSwapData = async (
 		  (data) => !seenSwaps.has(data.providerOrderId)
 		);
 
-		// EXIT 
+		// EXIT loop
 		if (uniqueSwaps.length === 0) {
 		  console.log("\n\n ===> No new swaps found. Exiting recursion. \n\n");
-		  // process.exit(1);
 		  return true;
 		}
 
@@ -401,10 +400,8 @@ export const fetchSwapData = async (
 			);
 		}
 
-		// return true;
 		console.log("\n\n Unique Addresses: ", addresses.length);
 		return true;
-		// process.exit(1);
 	} catch (error: any) {
 		console.log("====> Something went wrong with that call", error.message);
 		logger.info(error);
