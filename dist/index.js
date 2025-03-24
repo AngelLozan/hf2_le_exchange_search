@@ -187,7 +187,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
                     requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
             });
         }
-        const responses = yield Promise.all(requests);
+        const responses = yield throttleAll(requests.map((r) => () => r), 10, 50);
         const dataArrays = yield Promise.all(responses.map((res) => __awaiter(void 0, void 0, void 0, function* () {
             if (res && res.status === 200) {
                 const json = yield res.json();
@@ -199,14 +199,14 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
             }
         })));
         const allResults = dataArrays.flat().filter(Boolean);
-        console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n ========================================================== \n`);
+        console.log(`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`);
         const mergedData = Object.values(allResults.reduce((acc, item) => {
             acc[item.providerOrderId] = item;
             return acc;
         }, {}));
         const uniqueSwaps = mergedData.filter((data) => !seenSwaps.has(data.providerOrderId));
         if (uniqueSwaps.length === 0) {
-            console.log("\n\n ===> No new swaps found. Exiting recursion. \n\n");
+            console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
             return true;
         }
         uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
@@ -221,8 +221,8 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
                 continue;
             }
             unseen.forEach((addr) => addresses.push(addr));
-            console.log(`New addresses discovered: ${unseen.join(", ")}`);
-            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.to || null, data.from || null, addresses, seenSwaps);
+            console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`);
+            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.toAmount.assetId || null, data.amount.assetId || null, addresses, seenSwaps);
         }
         console.log("\n\n Unique Addresses: ", addresses.length);
         return true;

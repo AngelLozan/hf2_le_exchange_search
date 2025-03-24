@@ -321,15 +321,15 @@ export const fetchSwapData = async (
 			});
 		}
 
-		const responses = await Promise.all(requests);
+		// const responses = await Promise.all(requests);
 		
 		// Throttling with limited concurrency and delays
 
-		// const responses = await throttleAll(
-		//   requests.map((r) => () => r),
-		//   4,      // concurrency: 2 at a time
-		//   100     // delay: 200ms between starts
-		// );
+		const responses = await throttleAll(
+		  requests.map((r) => () => r),
+		  10,      // concurrency: 10 at a time
+		  50     // delay: 50ms between starts
+		);
 
 		const dataArrays = await Promise.all(
 			responses.map(async (res) => {
@@ -350,7 +350,7 @@ export const fetchSwapData = async (
 		const allResults = dataArrays.flat().filter(Boolean);
 
 		console.log(
-			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n ========================================================== \n`,
+			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`,
 		);
 
 		/* Array of unique SwapData objects based on the oid field.
@@ -375,7 +375,7 @@ export const fetchSwapData = async (
 
 		// EXIT loop
 		if (uniqueSwaps.length === 0) {
-		  console.log("\n\n ===> No new swaps found. Exiting recursion. \n\n");
+		  console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
 		  return true;
 		}
 
@@ -401,14 +401,14 @@ export const fetchSwapData = async (
 			// Add all unseen addresses
 			unseen.forEach((addr) => addresses.push(addr));
 
-			console.log(`New addresses discovered: ${unseen.join(", ")}`);
+			console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`);
 
 			// Recusion
 			await fetchSwapData(
 				data.fromAddress || null,
 				data.toAddress || null,
-				data.to || null,
-				data.from || null,
+				data.toAmount.assetId || null,
+				data.amount.assetId || null,
 				addresses,
 				seenSwaps
 			);
