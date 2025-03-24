@@ -7,14 +7,14 @@ const logger = pino();
 // const csv = require('csv-parser');
 import csv from "csv-parser";
 
-type AmountData = {
+export type AmountData = {
 	assetId: string;
 	value: string;
 };
 
-type Address = string;
+export type Address = string;
 
-type SwapData = {
+export type SwapData = {
 	amount: AmountData;
 	toAmount: AmountData;
 	createdAt: string;
@@ -76,7 +76,7 @@ const writerAddress = csvWriter.createObjectCsvWriter({
 	header: [{ id: "address", title: "Address" }],
 });
 
-const addressRecordWriter = async (_addresses: string[]) => {
+export const addressRecordWriter = async (_addresses: string[]) => {
 	console.log(_addresses);
 	const formatted = _addresses.map((addr) => ({ address: addr }));
 	await writerAddress.writeRecords(formatted);
@@ -122,7 +122,7 @@ const writerSwap = csvWriter.createObjectCsvWriter({
 	],
 });
 
-const swapsRecordWriter = async (_swaps: SwapData[]) => {
+export const swapsRecordWriter = async (_swaps: SwapData[]) => {
 	const formatted = _swaps.map((swap) => ({
 		...swap,
 		from: swap.amount?.assetId,
@@ -140,7 +140,7 @@ const swapsRecordWriter = async (_swaps: SwapData[]) => {
 };
 
 
-const baseFetch = async (_url: string) => {
+export const baseFetch = async (_url: string) => {
 	let response;
 	try {
 		response = await fetch(_url, {
@@ -156,7 +156,6 @@ const baseFetch = async (_url: string) => {
 		return response;
 	} catch (error: any) {
 		console.log("Something went wrong base fetch:", error);
-		logger.info(error);
 		return response;
 	}
 };
@@ -521,3 +520,4 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 if (require.main === module) {
 	main();
 }
+

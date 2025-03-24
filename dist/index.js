@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.crawlSwapData = exports.fetchSwapData = void 0;
+exports.crawlSwapData = exports.fetchSwapData = exports.baseFetch = exports.swapsRecordWriter = exports.addressRecordWriter = void 0;
 const csvWriter = require("csv-writer");
 const { Search } = require("./cryptoregex");
 const path_1 = __importDefault(require("path"));
@@ -29,6 +29,7 @@ const addressRecordWriter = (_addresses) => __awaiter(void 0, void 0, void 0, fu
     const formatted = _addresses.map((addr) => ({ address: addr }));
     yield writerAddress.writeRecords(formatted);
 });
+exports.addressRecordWriter = addressRecordWriter;
 const writerSwap = csvWriter.createObjectCsvWriter({
     path: path_1.default.resolve(__dirname, "sheet2.csv"),
     header: [
@@ -73,6 +74,7 @@ const swapsRecordWriter = (_swaps) => __awaiter(void 0, void 0, void 0, function
     });
     yield writerSwap.writeRecords(formatted);
 });
+exports.swapsRecordWriter = swapsRecordWriter;
 const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
     let response;
     try {
@@ -89,10 +91,10 @@ const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.log("Something went wrong base fetch:", error);
-        logger.info(error);
         return response;
     }
 });
+exports.baseFetch = baseFetch;
 function delay(time) {
     return new Promise(function (resolve) {
         setTimeout(resolve, time);
@@ -172,19 +174,19 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         if (toCurrency.length === 1 && fromCurrency.length === 1) {
             if (_fromAddress)
                 console.log("URL before request FROM", `${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`);
-            requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`));
+            requests.push((0, exports.baseFetch)(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fromCurrency[0]}`));
             if (_toAddress)
                 console.log("URL before request TO", `${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`);
-            requests.push(baseFetch(`${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`));
+            requests.push((0, exports.baseFetch)(`${baseUrl}?toAddress=${_toAddress}&toAsset=${toCurrency[0]}`));
         }
         else {
             toCurrency.forEach((tCoin) => {
                 if (tCoin !== "Not Found")
-                    requests.push(baseFetch(`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`));
+                    requests.push((0, exports.baseFetch)(`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`));
             });
             fromCurrency.forEach((fCoin) => {
                 if (fCoin !== "Not Found")
-                    requests.push(baseFetch(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
+                    requests.push((0, exports.baseFetch)(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
             });
         }
         const responses = yield throttleAll(requests.map((r) => () => r), 10, 50);
@@ -211,7 +213,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         }
         uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
         console.log(`n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
-        yield swapsRecordWriter(uniqueSwaps);
+        yield (0, exports.swapsRecordWriter)(uniqueSwaps);
         for (const data of uniqueSwaps) {
             const normFrom = normalizeAddress(data.fromAddress);
             const normTo = normalizeAddress(data.toAddress);
@@ -239,7 +241,7 @@ const crawlSwapData = (from, to, toAsset, fromAsset) => __awaiter(void 0, void 0
     const seenSwaps = new Set();
     yield (0, exports.fetchSwapData)(from, to, toAsset, fromAsset, addresses, seenSwaps);
     console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
-    yield addressRecordWriter([...new Set(addresses)]);
+    yield (0, exports.addressRecordWriter)([...new Set(addresses)]);
     console.log("\n\n Unique Addresses written: ", addresses.length);
     process.exit(0);
 });
