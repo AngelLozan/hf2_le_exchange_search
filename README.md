@@ -115,6 +115,8 @@ tsc
 
 - Order of arguments is important. If you have one argument and not the other separating two, then use a space and an empty string `''`
 - Structure the CSV, if path passed, to have one header value named `Address` under which all addresses you wish to check are located. *`Address` is case sensitive*
+  
+- You do not need to include the asset on the csv, just one column, the `Address`. Assets are determined initially, where unavailable from the API call, in the `./src/cryptoregex.ts`. 
 
 ex: 
 
@@ -153,3 +155,10 @@ With only single addresses and currencies:
 npm run search '' '<fromAddress>' '<toAddress>' '<toCurrency>' '<fromCurrency>'
 ```
 
+
+
+### 5. Contributions & Maintenance:
+
+- For all HF2 Members, or anyone, you are welcome to contribute code. Except for Jason. Jason, ur a naughty boi 🫵 . Everyone else, clone the repo, add your contribution and make a PR. 
+  
+  
