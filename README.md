@@ -159,6 +159,6 @@ npm run search '' '<fromAddress>' '<toAddress>' '<toCurrency>' '<fromCurrency>'
 
 ### 5. Contributions & Maintenance:
 
-- For all HF2 Members, or anyone, you are welcome to contribute code. Except for Jason. Jason, ur a naughty boi 🫵 . Everyone else, clone the repo, add your contribution and make a PR. 
+- For all HF2 Members, or anyone, you are welcome to contribute code. Except for Jason. Jason, ur a naughty boi 🫵 . Everyone else, clone the repo, make a new branch, add your contribution and make a PR. 
   
-  
+
