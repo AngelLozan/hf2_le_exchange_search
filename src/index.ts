@@ -177,7 +177,8 @@ async function throttleAll<T>(
 }
 
 
-const normalizeAddress = (addr: string) => addr.trim().toLowerCase();
+export const normalizeAddress = (addr?: string | null): string =>
+	typeof addr === 'string' ? addr.trim().toLowerCase() : '';
 
 //----------------------------------------
 
@@ -195,9 +196,10 @@ export const fetchSwapData = async (
 	addresses: Address[],
 	seenSwaps: Set<string>
 ) => {
-	// const baseUrl = "https://exchange-s.exodus.io/v3/orders"; // Dev
-	const baseUrl = "https://exchange.exodus.io/v3/orders"; // Prod
-	// let addresses: Address[] = [];
+	const baseUrl =
+		process.env.NODE_ENV === 'test'
+			? 'https://exchange-s.exodus.io/v3/orders' // Dev for test
+			: 'https://exchange.exodus.io/v3/orders';  // Prod by default
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
@@ -219,7 +221,7 @@ export const fetchSwapData = async (
 	if (_toCurrency === null && _toAddress !== null) {
 		const toCoin = await Search(_toAddress);
 
-		if (toCoin.length > 1) {
+		if (typeof toCoin !== 'string') {
 			console.log("===> Checking all EVM assets for TO asset");
 			for (const tC of toCoin) {
 				toCurrency.push(tC.toUpperCase());
@@ -235,7 +237,7 @@ export const fetchSwapData = async (
 	if (_fromCurrency === null && _fromAddress !== null) {
 		const fromCoin = await Search(_fromAddress);
 
-		if (fromCoin.length > 1) {
+		if (typeof fromCoin !== 'string') {
 			console.log("===> Checking all EVM assets for FROM asset");
 			for (const fC of fromCoin) {
 				fromCurrency.push(fC.toUpperCase());

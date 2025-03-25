@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.crawlSwapData = exports.fetchSwapData = exports.baseFetch = exports.swapsRecordWriter = exports.addressRecordWriter = void 0;
+exports.crawlSwapData = exports.fetchSwapData = exports.normalizeAddress = exports.baseFetch = exports.swapsRecordWriter = exports.addressRecordWriter = void 0;
 const csvWriter = require("csv-writer");
 const { Search } = require("./cryptoregex");
 const path_1 = __importDefault(require("path"));
@@ -120,24 +120,27 @@ function throttleAll(tasks_1) {
         return results;
     });
 }
-const normalizeAddress = (addr) => addr.trim().toLowerCase();
+const normalizeAddress = (addr) => typeof addr === 'string' ? addr.trim().toLowerCase() : '';
+exports.normalizeAddress = normalizeAddress;
 process.on("SIGINT", function () {
     console.log("Caught interrupt signal");
     process.exit(0);
 });
 const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses, seenSwaps) {
-    const baseUrl = "https://exchange.exodus.io/v3/orders";
+    const baseUrl = process.env.NODE_ENV === 'test'
+        ? 'https://exchange-s.exodus.io/v3/orders'
+        : 'https://exchange.exodus.io/v3/orders';
     let toCurrency = [];
     let fromCurrency = [];
     if (_fromAddress !== null &&
-        !addresses.includes(normalizeAddress(_fromAddress)))
-        addresses.push(normalizeAddress(_fromAddress));
+        !addresses.includes((0, exports.normalizeAddress)(_fromAddress)))
+        addresses.push((0, exports.normalizeAddress)(_fromAddress));
     if (_toAddress !== null &&
-        !addresses.includes(normalizeAddress(_toAddress)))
-        addresses.push(normalizeAddress(_toAddress));
+        !addresses.includes((0, exports.normalizeAddress)(_toAddress)))
+        addresses.push((0, exports.normalizeAddress)(_toAddress));
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
-        if (toCoin.length > 1) {
+        if (typeof toCoin !== 'string') {
             console.log("===> Checking all EVM assets for TO asset");
             for (const tC of toCoin) {
                 toCurrency.push(tC.toUpperCase());
@@ -154,7 +157,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     }
     if (_fromCurrency === null && _fromAddress !== null) {
         const fromCoin = yield Search(_fromAddress);
-        if (fromCoin.length > 1) {
+        if (typeof fromCoin !== 'string') {
             console.log("===> Checking all EVM assets for FROM asset");
             for (const fC of fromCoin) {
                 fromCurrency.push(fC.toUpperCase());
@@ -215,8 +218,8 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         console.log(`n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
         yield (0, exports.swapsRecordWriter)(uniqueSwaps);
         for (const data of uniqueSwaps) {
-            const normFrom = normalizeAddress(data.fromAddress);
-            const normTo = normalizeAddress(data.toAddress);
+            const normFrom = (0, exports.normalizeAddress)(data.fromAddress);
+            const normTo = (0, exports.normalizeAddress)(data.toAddress);
             const newAddresses = [normFrom, normTo];
             const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
             if (unseen.length === 0) {
