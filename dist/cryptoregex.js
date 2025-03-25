@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
     const source = _address;
     if (source === null || source === undefined || !source) {
-        return false;
+        return "Not Found";
     }
     else if (/^tz[a-z0-9]{34}$|^o[a-z0-9]{50}$/gi.test(source)) {
         return "xtz";
