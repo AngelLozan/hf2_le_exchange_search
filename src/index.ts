@@ -50,26 +50,6 @@ export type SwapData = {
 	clientVer?: string;
 };
 
-// TO DO: Adapt appropriate type and reduce by providerOrderId
-
-// {
-//       amount: [Object],
-//       toAmount: [Object],
-//       createdAt: '2025-01-07T23:44:55.761Z',
-//       fromAddress: 'TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP',
-//       fromTransactionId: '930c661659bba2ca5bb6016c94ae7689561ba2e99e5fc7551fdc3a37070c5d02',
-//       id: 'Gb0D8dyX0MeN3eE',
-//       message: '',
-//       pairId: 'USDTTRX_TRX',
-//       payInAddress: 'TLeXWADfVXwaB7DiFCgqAG7MURPSK9mkGp',
-//       providerOrderId: '0dxq0x9sshv05gt1mg',
-//       rateId: '67216e32-d973-4acc-8aa1-3581551fbb94',
-//       toAddress: 'TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP',
-//       toTransactionId: 'ea52148a9b25d0ddaba55d679615d88a9e5ec98224c1c35f08d772b0cdf79ae5',
-//       updatedAt: '2025-01-07T23:48:53.649Z',
-//       status: 'complete'
-//     },
-
 // Put additional addresses from swap pair. Add to sheet 1
 const writerAddress = csvWriter.createObjectCsvWriter({
 	path: path.resolve(__dirname, "sheet1.csv"),
