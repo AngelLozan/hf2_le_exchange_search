@@ -75,26 +75,6 @@ const swapsRecordWriter = (_swaps) => __awaiter(void 0, void 0, void 0, function
     yield writerSwap.writeRecords(formatted);
 });
 exports.swapsRecordWriter = swapsRecordWriter;
-const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
-    let response;
-    try {
-        response = yield fetch(_url, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0",
-                "App-Name": "hf2_le_exchange_search",
-                "App-Version": "1.0.0",
-            },
-        });
-        return response;
-    }
-    catch (error) {
-        console.log("Something went wrong base fetch:", error);
-        return response;
-    }
-});
-exports.baseFetch = baseFetch;
 function delay(time) {
     return new Promise(function (resolve) {
         setTimeout(resolve, time);
@@ -120,13 +100,34 @@ function throttleAll(tasks_1) {
         return results;
     });
 }
-const normalizeAddress = (addr) => typeof addr === 'string' ? addr.trim().toLowerCase() : '';
-exports.normalizeAddress = normalizeAddress;
 process.on("SIGINT", function () {
     console.log("Caught interrupt signal");
     process.exit(0);
 });
+const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
+    let response;
+    try {
+        response = yield fetch(_url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0",
+                "App-Name": "hf2_le_exchange_search",
+                "App-Version": "1.0.0",
+            },
+        });
+        return response;
+    }
+    catch (error) {
+        console.log("Something went wrong base fetch:", error);
+        return response;
+    }
+});
+exports.baseFetch = baseFetch;
+const normalizeAddress = (addr) => typeof addr === 'string' ? addr.trim().toLowerCase() : '';
+exports.normalizeAddress = normalizeAddress;
 const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses, seenSwaps) {
+    var _a, _b;
     const baseUrl = process.env.NODE_ENV === 'test'
         ? 'https://exchange-s.exodus.io/v3/orders'
         : 'https://exchange.exodus.io/v3/orders';
@@ -218,16 +219,16 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         console.log(`n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
         yield (0, exports.swapsRecordWriter)(uniqueSwaps);
         for (const data of uniqueSwaps) {
-            const normFrom = (0, exports.normalizeAddress)(data.fromAddress);
-            const normTo = (0, exports.normalizeAddress)(data.toAddress);
-            const newAddresses = [normFrom, normTo];
+            const normalizedFrom = (0, exports.normalizeAddress)(data.fromAddress);
+            const normalizedTo = (0, exports.normalizeAddress)(data.toAddress);
+            const newAddresses = [normalizedFrom, normalizedTo];
             const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
             if (unseen.length === 0) {
                 continue;
             }
             unseen.forEach((addr) => addresses.push(addr));
             console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`);
-            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, data.toAmount.assetId || null, data.amount.assetId || null, addresses, seenSwaps);
+            yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, ((_a = data.toAmount) === null || _a === void 0 ? void 0 : _a.assetId) || null, ((_b = data.amount) === null || _b === void 0 ? void 0 : _b.assetId) || null, addresses, seenSwaps);
         }
         console.log("\n\n Unique Addresses: ", addresses.length);
         return true;
@@ -286,7 +287,6 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
             [csv_file_path, _fromAddress, _toAddress, _toCurrency, _fromCurrency] =
                 args.map((arg) => (arg === "" ? null : arg));
         }
-        const allPromises = [];
         try {
             if (csv_file_path !== null) {
                 const addressesToProcess = [];
@@ -302,7 +302,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
                         console.log("\n\n ==> Searching address: ", addr);
                         yield (0, exports.crawlSwapData)(addr);
                     }
-                    console.log("\n\n ====> ✅ All recursive searches completed.");
+                    console.log("\n\n ====> ✅ All recursive searches in CSV completed.");
                     process.exit(0);
                 }));
             }

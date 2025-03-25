@@ -7,6 +7,9 @@ const logger = pino();
 // const csv = require('csv-parser');
 import csv from "csv-parser";
 
+//----------------------------------------
+// Types:
+
 export type AmountData = {
 	assetId: string;
 	value: string;
@@ -50,7 +53,9 @@ export type SwapData = {
 	clientVer?: string;
 };
 
-// Put additional addresses from swap pair. Add to sheet 1
+//----------------------------------------
+// Writers:
+
 const writerAddress = csvWriter.createObjectCsvWriter({
 	path: path.resolve(__dirname, "sheet1.csv"),
 	header: [{ id: "address", title: "Address" }],
@@ -119,27 +124,6 @@ export const swapsRecordWriter = async (_swaps: SwapData[]) => {
 	await writerSwap.writeRecords(formatted);
 };
 
-
-export const baseFetch = async (_url: string) => {
-	let response;
-	try {
-		response = await fetch(_url, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				"User-Agent":
-					"Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0",
-				"App-Name": "hf2_le_exchange_search",
-				"App-Version": "1.0.0",
-			},
-		});
-		return response;
-	} catch (error: any) {
-		console.log("Something went wrong base fetch:", error);
-		return response;
-	}
-};
-
 //----------------------------------------
 // Helpers:
 
@@ -176,16 +160,37 @@ async function throttleAll<T>(
 	return results;
 }
 
+process.on("SIGINT", function () {
+	console.log("Caught interrupt signal");
+	process.exit(0);
+});
+
+export const baseFetch = async (_url: string) => {
+	let response;
+	try {
+		response = await fetch(_url, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				"User-Agent":
+					"Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0",
+				"App-Name": "hf2_le_exchange_search",
+				"App-Version": "1.0.0",
+			},
+		});
+		return response;
+	} catch (error: any) {
+		console.log("Something went wrong base fetch:", error);
+		return response;
+	}
+};
 
 export const normalizeAddress = (addr?: string | null): string =>
 	typeof addr === 'string' ? addr.trim().toLowerCase() : '';
 
 //----------------------------------------
+// Main Functions:
 
-process.on("SIGINT", function () {
-	console.log("Caught interrupt signal");
-	process.exit(0);
-});
 
 // Get swap data from api
 export const fetchSwapData = async (
@@ -334,13 +339,16 @@ export const fetchSwapData = async (
 			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`,
 		);
 
-		/* Array of unique SwapData objects based on the oid field.
+		/* 
+			Organize swap data pulled and filter for unique.
+			Array of unique SwapData objects based on the oid field.
     		Example:
     	    const swaps: SwapData[] = [
 		     { xxxx: 'xxxxx', yyyyy: 'yyyyyy', ddddd: 'ddddd', pppp: 222222 }, 
 		     { xxxx: 'xxxxx', yyyyy: 'yyyyyy', ddddd: 'ddddd', pppp: 222222 },
 			];
 		*/
+
 		const mergedData: SwapData[] = Object.values(
 			// dataArrays.flat().reduce((acc, item) => {
 			allResults.reduce((acc, item) => {
@@ -354,7 +362,7 @@ export const fetchSwapData = async (
 		  (data) => !seenSwaps.has(data.providerOrderId)
 		);
 
-		// EXIT loop
+		// Exit loop into the crawl swap data which exits to main. 
 		if (uniqueSwaps.length === 0) {
 		  console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
 		  return true;
@@ -367,16 +375,23 @@ export const fetchSwapData = async (
 		await swapsRecordWriter(uniqueSwaps);
 
 
-		// Add addresses to sheet 1 & recursive search
-		for (const data of uniqueSwaps) {
-			const normFrom = normalizeAddress(data.fromAddress);
-			const normTo = normalizeAddress(data.toAddress);
+		/* 
+			Review unique swap data, pull out address.
+			Pull out unique addresses found.
+			Add unique addresses to the higher level address state array.
+			Carry over unique swaps in higher level swap data state array.
+			Get more data for each unique address if any. 
+		*/
 
-			const newAddresses = [normFrom, normTo];
+		for (const data of uniqueSwaps) {
+			const normalizedFrom = normalizeAddress(data.fromAddress);
+			const normalizedTo = normalizeAddress(data.toAddress);
+
+			const newAddresses = [normalizedFrom, normalizedTo];
 			const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
 
 			if (unseen.length === 0) {
-				continue;
+				continue; // Exit to uniqueSwaps loop
 			}
 
 			// Add all unseen addresses
@@ -388,15 +403,15 @@ export const fetchSwapData = async (
 			await fetchSwapData(
 				data.fromAddress || null,
 				data.toAddress || null,
-				data.toAmount.assetId || null,
-				data.amount.assetId || null,
+				data.toAmount?.assetId || null,
+				data.amount?.assetId || null,
 				addresses,
 				seenSwaps
 			);
 		}
 
 		console.log("\n\n Unique Addresses: ", addresses.length);
-		return true;
+		return true; // Exit to crawlSwapData which exits to main.
 	} catch (error: any) {
 		console.log("====> Something went wrong with that call", error.message);
 		logger.info(error);
@@ -405,6 +420,7 @@ export const fetchSwapData = async (
 	}
 };
 
+// Wrapper for fetching data to ensure accurate address write
 export const crawlSwapData = async (
 	from?: string,
 	to?: string,
@@ -418,9 +434,10 @@ export const crawlSwapData = async (
 	console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
 	await addressRecordWriter([...new Set(addresses)]);
 	console.log("\n\n Unique Addresses written: ", addresses.length);
-	return true;
+	return true; // Allow continue if multiple addresses. Exit to main.
 };
 
+// Entry point
 async function main() {
 	const timerAnimation = (function () {
 		var P = ["[\\]", "[|]", "[/]", "[-]"];
@@ -462,7 +479,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 	}
 
 	// console.log(args);
-	const allPromises: Promise<void>[] = [];
+	// const allPromises: Promise<void>[] = [];
 
 	try {
 		if (csv_file_path !== null) {
@@ -484,11 +501,12 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 					}
 
 					console.log(
-						"\n\n ====> ✅ All recursive searches completed.",
+						"\n\n ====> ✅ All recursive searches in CSV completed.",
 					);
 					process.exit(0);
 				});
 		} else {
+			// Singular address
 			await crawlSwapData(
 				_fromAddress || undefined,
 				_toAddress || undefined,
