@@ -243,7 +243,7 @@ const crawlSwapData = (from, to, toAsset, fromAsset) => __awaiter(void 0, void 0
     console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
     yield (0, exports.addressRecordWriter)([...new Set(addresses)]);
     console.log("\n\n Unique Addresses written: ", addresses.length);
-    process.exit(0);
+    return true;
 });
 exports.crawlSwapData = crawlSwapData;
 function main() {
@@ -293,20 +293,25 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
                     addressesToProcess.push(row.Address);
                 })
                     .on("end", () => __awaiter(this, void 0, void 0, function* () {
+                    console.log("addressesToProcess", addressesToProcess);
                     console.log("\n\n ====> CSV file successfully processed");
                     for (const addr of addressesToProcess) {
                         console.log("\n\n ==> Searching address: ", addr);
                         yield (0, exports.crawlSwapData)(addr);
                     }
                     console.log("\n\n ====> ✅ All recursive searches completed.");
+                    process.exit(0);
                 }));
             }
             else {
                 yield (0, exports.crawlSwapData)(_fromAddress || undefined, _toAddress || undefined, _toCurrency || undefined, _fromCurrency || undefined);
+                console.log("\n\n ====> ✅ All recursive searches completed.");
+                process.exit(0);
             }
         }
         catch (e) {
             console.log(`=====> There was an issue with that CSV read: ${e}`);
+            process.exit(0);
         }
     });
 }
