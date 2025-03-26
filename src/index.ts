@@ -135,7 +135,7 @@ const writerSwap = csvWriter.createObjectCsvWriter({
 		// Optional to define
 		{ id: "amount", title: "Amount" },
 		{ id: "toAmount", title: "To Amount" },
-		{ id: "svc", title: "Service" },
+		{ id: "svc", title: "Provider" },
 		{ id: "from", title: "From" },
 		{ id: "to", title: "To" },
 		{ id: "fromAmt", title: "From Amount" },
