@@ -41,58 +41,6 @@ curl --user-agent "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firef
 ```
 
 
-Returned structure: 
-
-```json
-{
-  "id": "dwtqj46om6h61chdde",
-  "orderId": "Dmwdl6wbZpR803o",
-  "options": {
-    "statusRequestParams": {
-      "headers": {
-        "api-key": "80c55f0b-f734-4af6-9f9b-bb851e663c4f",
-        "Content-Type": "application/json",
-        "referer": "exodus-dwtqj46om6h61chdde"
-      },
-      "message": {
-        "jsonrpc": "2.0",
-        "method": "getTransactions",
-        "params": {
-          "id": "dwtqj46om6h61chdde"
-        },
-        "id": "dwtqj46om6h61chdde"
-      }
-    }
-  },
-  "response": {
-    "id": "dwtqj46om6h61chdde",
-    "status": "expired",
-    "currencyFrom": "usdttrc20",
-    "currencyTo": "trx",
-    "payinHash": null,
-    "payoutHash": null,
-    "refundHash": null,
-    "payinAddress": "TAt8eeGjEyqeHvXhFUWqtyZX2CHVssJJxK",
-    "payinExtraId": null,
-    "payoutAddress": "TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP",
-    "payoutExtraId": null,
-    "amountExpectedFrom": "100.0000000000000000000000",
-    "amountExpectedTo": "397.7710620848821000000000",
-    "amountFrom": "",
-    "amountTo": "0",
-    "apiExtraFee": 0,
-    "refundReason": "Funds were sent to an expired transaction",
-    "networkFee": null,
-    "createdAt": 1740076298
-  },
-  "provider": {
-    "id": 1,
-    "slug": "aero"
-  }
-}
-```
-
-
 Get Assets: 
 
 ```curl
