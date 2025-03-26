@@ -53,6 +53,54 @@ export type SwapData = {
 	clientVer?: string;
 };
 
+export type ProviderData = {
+  id: string;
+  orderId: string;
+  options: {
+    statusRequestParams: {
+      headers: {
+        "api-key": string;
+        "Content-Type": string;
+        referer: string;
+      };
+      message: {
+        jsonrpc: string;
+        method: string;
+        params: {
+          id: string;
+        };
+        id: string;
+      };
+    };
+  };
+  response: {
+    id: string;
+    status: string;
+    currencyFrom: string;
+    currencyTo: string;
+    payinHash: string | null;
+    payoutHash: string | null;
+    refundHash: string | null;
+    payinAddress: string;
+    payinExtraId: string | null;
+    payoutAddress: string;
+    payoutExtraId: string | null;
+    amountExpectedFrom: string;
+    amountExpectedTo: string;
+    amountFrom: string;
+    amountTo: string;
+    apiExtraFee: number;
+    refundReason: string;
+    networkFee: number | null;
+    createdAt: number;
+  };
+  provider: {
+    id: number;
+    slug: string;
+  };
+};
+
+
 //----------------------------------------
 // Writers:
 
@@ -205,6 +253,8 @@ export const fetchSwapData = async (
 		process.env.NODE_ENV === 'test'
 			? 'https://exchange-s.exodus.io/v3/orders' // Dev for test
 			: 'https://exchange.exodus.io/v3/orders';  // Prod by default
+
+	const providerDataUrl = 'https://exchange.exodus.io/v3/provider-orders';
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
 
@@ -219,7 +269,11 @@ export const fetchSwapData = async (
 		!addresses.includes(normalizeAddress(_toAddress))
 	)
 		addresses.push(normalizeAddress(_toAddress));
-	// if(_toAddress !== null && !addresses.includes(_toAddress)) addresses.push(_toAddress);
+	
+	// If no toAddress (singular address provided), use fromAddress as toAddress also. 
+	// if (_toAddress == null) {
+	//   _toAddress = _fromAddress;
+	// }
 
 
 	// If currency is null, then need to use cryptoregex to determine based on address
@@ -357,6 +411,21 @@ export const fetchSwapData = async (
 			}, {} as Record<string, SwapData>),
 		);
 
+		// Add SVC to swap data
+		await Promise.all(
+		  mergedData.map(async (swap) => {
+		    const providerOrderId = swap.providerOrderId;
+		    const svcRes = await baseFetch(`${providerDataUrl}/${providerOrderId}`);
+		    const svcResJson = await svcRes?.json();
+
+		    if(svcResJson.status !== 404) { 
+		    	swap.svc = svcResJson.provider.slug; 
+		    } else {
+		    	swap.svc = 'Not Found';
+		    }
+		  })
+		);
+
 		// console.log("Merged data:", JSON.stringify(mergedData, null, 2));
 		const uniqueSwaps = mergedData.filter(
 		  (data) => !seenSwaps.has(data.providerOrderId)
@@ -366,7 +435,7 @@ export const fetchSwapData = async (
 		if (uniqueSwaps.length === 0) {
 		  console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
 		  return true;
-		}
+		} 
 
 		uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
 
@@ -397,7 +466,7 @@ export const fetchSwapData = async (
 			// Add all unseen addresses
 			unseen.forEach((addr) => addresses.push(addr));
 
-			console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`);
+			console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`); 
 
 			// Recusion
 			await fetchSwapData(

@@ -131,6 +131,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     const baseUrl = process.env.NODE_ENV === 'test'
         ? 'https://exchange-s.exodus.io/v3/orders'
         : 'https://exchange.exodus.io/v3/orders';
+    const providerDataUrl = 'https://exchange.exodus.io/v3/provider-orders';
     let toCurrency = [];
     let fromCurrency = [];
     if (_fromAddress !== null &&
@@ -210,6 +211,17 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
             acc[item.providerOrderId] = item;
             return acc;
         }, {}));
+        yield Promise.all(mergedData.map((swap) => __awaiter(void 0, void 0, void 0, function* () {
+            const providerOrderId = swap.providerOrderId;
+            const svcRes = yield (0, exports.baseFetch)(`${providerDataUrl}/${providerOrderId}`);
+            const svcResJson = yield (svcRes === null || svcRes === void 0 ? void 0 : svcRes.json());
+            if (svcResJson.status !== 404) {
+                swap.svc = svcResJson.provider.slug;
+            }
+            else {
+                swap.svc = 'Not Found';
+            }
+        })));
         const uniqueSwaps = mergedData.filter((data) => !seenSwaps.has(data.providerOrderId));
         if (uniqueSwaps.length === 0) {
             console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
