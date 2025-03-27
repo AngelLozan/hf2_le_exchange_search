@@ -33,16 +33,16 @@ export type SwapData = {
 	toTransactionId: string;
 	updatedAt: string;
 	status: string;
-	//optional from csv
 	svc?: string;
 	from?: string; //amount.assetId;
 	to?: string; //toAmount.assetId;
-	fromAmt?: string;
 	fromAmtStr?: string; //amount.value;
 	fromAmtUSD?: string; //amount.value;
-	toAmt?: string;
 	toAmtStr?: string; //toAmount.value;
 	toAmtUSD?: string; //toAmount.value;
+	//optional from csv
+	fromAmt?: string;
+	toAmt?: string;
 	svcResponse?: string;
 	svcStatus?: string;
 	fromSource?: string;
