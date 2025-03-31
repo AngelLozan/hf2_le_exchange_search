@@ -9,7 +9,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+jest.mock('../fetchSwapData', () => ({
+    fetchSwapData: jest.fn(),
+}));
+jest.mock('../writers', () => ({
+    addressRecordWriter: jest.fn(),
+}));
 const index_1 = require("../index");
+const crawlSwapData_1 = require("../crawlSwapData");
+const fetchSwapData_1 = require("../fetchSwapData");
+const writers_1 = require("../writers");
 const request = require("supertest");
 const path = require("path");
 describe('baseFetch', () => {
@@ -41,6 +50,36 @@ describe('baseFetch', () => {
         const response = yield (0, index_1.baseFetch)('https://api.example.com/error');
         expect(global.fetch).toHaveBeenCalled();
         expect(response).toBeUndefined();
+    }));
+});
+describe('crawlSwapData', () => {
+    let exitSpy;
+    beforeEach(() => {
+        exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
+            throw new Error('process.exit called');
+        });
+        fetchSwapData_1.fetchSwapData.mockClear();
+        writers_1.addressRecordWriter.mockClear();
+    });
+    afterEach(() => {
+        exitSpy.mockRestore();
+    });
+    it('should call fetchSwapData and addressRecordWriter with deduplicated addresses', () => __awaiter(void 0, void 0, void 0, function* () {
+        fetchSwapData_1.fetchSwapData.mockImplementation((from, to, toAsset, fromAsset, addresses, seenSwaps) => __awaiter(void 0, void 0, void 0, function* () {
+            addresses.push('addr1', 'addr2', 'addr1');
+            seenSwaps.add('swap1');
+        }));
+        try {
+            yield (0, crawlSwapData_1.crawlSwapData)('walletA', 'walletB', 'USDT', 'BTC');
+        }
+        catch (e) {
+            if (e.message !== 'process.exit called')
+                throw e;
+        }
+        expect(fetchSwapData_1.fetchSwapData).toHaveBeenCalledWith('walletA', 'walletB', 'USDT', 'BTC', expect.any(Array), expect.any(Set));
+        expect(writers_1.addressRecordWriter).toHaveBeenCalledWith(expect.arrayContaining(['addr1', 'addr2']));
+        expect(writers_1.addressRecordWriter).toHaveBeenCalledTimes(1);
+        expect(exitSpy).toHaveBeenCalledWith(0);
     }));
 });
 //# sourceMappingURL=index.test.js.map

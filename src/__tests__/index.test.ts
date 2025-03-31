@@ -1,17 +1,23 @@
+jest.mock('../fetchSwapData', () => ({
+  fetchSwapData: jest.fn(),
+}));
+
+jest.mock('../writers', () => ({
+  addressRecordWriter: jest.fn(),
+}));
+
+// ==================================================================================
+
 import type { SwapData, AmountData, Address } from '../index';
-import { baseFetch, crawlSwapData } from '../index';
+import { baseFetch } from '../index';
+import { crawlSwapData } from '../crawlSwapData';
+import { fetchSwapData } from '../fetchSwapData';
+import { addressRecordWriter, swapsRecordWriter } from '../writers';
 import * as swapModule from '../index';
 const request = require("supertest");
 const path = require("path");
 
-// jest.mock('../index', () => {
-//   const actual = jest.requireActual('../index');
-//   return {
-//     ...actual,
-//     fetchSwapData: jest.fn(),
-//     addressRecordWriter: jest.fn(),
-//   };
-// });
+// ==================================================================================
 
 describe('baseFetch', () => {
   beforeEach(() => {
@@ -56,56 +62,59 @@ describe('baseFetch', () => {
 
 // ==================================================================================
 
-// describe('crawlSwapData', () => {
-//   let exitSpy: jest.SpyInstance;
+describe('crawlSwapData', () => {
+  let exitSpy: jest.SpyInstance;
 
-//   beforeEach(() => {
-//     exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
-//       throw new Error('process.exit called'); // Prevent termination
-//     });
-//     (swapModule.fetchSwapData as jest.Mock).mockClear();
-//     (swapModule.addressRecordWriter as jest.Mock).mockClear();
-//   });
+  beforeEach(() => {
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
+    (fetchSwapData as jest.Mock).mockClear();
+    (addressRecordWriter as jest.Mock).mockClear();
+  });
 
-//   afterEach(() => {
-//     exitSpy.mockRestore();
-//   });
+  afterEach(() => {
+    exitSpy.mockRestore();
+  });
 
-//   it('should call fetchSwapData and addressRecordWriter with deduplicated addresses', async () => {
-//     (swapModule.fetchSwapData as jest.Mock).mockImplementation(
-//       async (
-//         from: string,
-//         to: string,
-//         toAsset: string,
-//         fromAsset: string,
-//         addresses: string[],
-//         seenSwaps: Set<string>,
-//       ) => {
-//         addresses.push('addr1', 'addr2', 'addr1'); // Duplicate to test deduplication
-//         seenSwaps.add('swap1');
-//       },
-//     );
+  it('should call fetchSwapData and addressRecordWriter with deduplicated addresses', async () => {
+    (fetchSwapData as jest.Mock).mockImplementation(
+      async (
+        from: string,
+        to: string,
+        toAsset: string,
+        fromAsset: string,
+        addresses: string[],
+        seenSwaps: Set<string>,
+      ) => {
+        addresses.push('addr1', 'addr2', 'addr1'); // Duplicate to test deduplication
+        seenSwaps.add('swap1');
+      },
+    );
 
-//     try {
-//       await crawlSwapData('walletA', 'walletB', 'USDT', 'BTC');
-//     } catch (e: any) {
-//       if (e.message !== 'process.exit called') throw e;
-//     }
+    try {
+      await crawlSwapData('walletA', 'walletB', 'USDT', 'BTC');
+    } catch (e: any) {
+      if (e.message !== 'process.exit called') throw e;
+    }
 
-//     expect(swapModule.fetchSwapData).toHaveBeenCalledWith(
-//       'walletA',
-//       'walletB',
-//       'USDT',
-//       'BTC',
-//       expect.any(Array), // addresses
-//       expect.any(Set), // seenSwaps
-//     );
+    expect(fetchSwapData).toHaveBeenCalledWith(
+      'walletA',
+      'walletB',
+      'USDT',
+      'BTC',
+      expect.any(Array), // addresses
+      expect.any(Set), // seenSwaps
+    );
 
-//     expect(swapModule.addressRecordWriter).toHaveBeenCalledWith(
-//       expect.arrayContaining(['addr1', 'addr2']),
-//     );
+    expect(addressRecordWriter).toHaveBeenCalledWith(
+      expect.arrayContaining(['addr1', 'addr2']),
+    );
 
-//     expect(swapModule.addressRecordWriter).toHaveBeenCalledTimes(1);
-//     expect(exitSpy).toHaveBeenCalledWith(0);
-//   });
-// });
+    expect(addressRecordWriter).toHaveBeenCalledTimes(1);
+    expect(exitSpy).toHaveBeenCalledWith(0);
+  });
+});
+
+// ==================================================================================
+
