@@ -23,3 +23,5 @@ compose.env
 Dockerfile.dev
 distSave/
 
+./src/sheet2.csv
+./src/sheet1.csv
