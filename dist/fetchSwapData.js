@@ -32,6 +32,9 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     if (_toAddress !== null &&
         !addresses.includes((0, index_1.normalizeAddress)(_toAddress)))
         addresses.push((0, index_1.normalizeAddress)(_toAddress));
+    if (_toAddress == null) {
+        _toAddress = _fromAddress;
+    }
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
         if (typeof toCoin === 'object') {

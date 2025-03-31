@@ -37,9 +37,9 @@ export const fetchSwapData = async (
 		addresses.push(normalizeAddress(_toAddress));
 	
 	// If no toAddress (singular address provided), use fromAddress as toAddress also. 
-	// if (_toAddress == null) {
-	//   _toAddress = _fromAddress;
-	// }
+	if (_toAddress == null) {
+	  _toAddress = _fromAddress;
+	}
 
 
 	// If currency is null, then need to use cryptoregex to determine based on address
