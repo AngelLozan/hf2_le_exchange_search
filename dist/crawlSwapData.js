@@ -19,7 +19,7 @@ const crawlSwapData = (from, to, toAsset, fromAsset) => __awaiter(void 0, void 0
     console.log("\n\n ====> ✅ All recursion complete, writing addresses \n\n");
     yield (0, writers_1.addressRecordWriter)([...new Set(addresses)]);
     console.log("\n\n Unique Addresses written: ", addresses.length);
-    process.exit(0);
+    return true;
 });
 exports.crawlSwapData = crawlSwapData;
 //# sourceMappingURL=crawlSwapData.js.map

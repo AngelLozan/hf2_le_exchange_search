@@ -87,7 +87,7 @@ describe('crawlSwapData', () => {
         addresses: string[],
         seenSwaps: Set<string>,
       ) => {
-        addresses.push('addr1', 'addr2', 'addr1'); // Duplicate to test deduplication
+        addresses.push('addr1', 'addr2', 'addr1');
         seenSwaps.add('swap1');
       },
     );
@@ -103,8 +103,8 @@ describe('crawlSwapData', () => {
       'walletB',
       'USDT',
       'BTC',
-      expect.any(Array), // addresses
-      expect.any(Set), // seenSwaps
+      expect.any(Array),
+      expect.any(Set),
     );
 
     expect(addressRecordWriter).toHaveBeenCalledWith(

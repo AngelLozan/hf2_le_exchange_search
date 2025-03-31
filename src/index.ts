@@ -242,7 +242,7 @@ export const normalizeAddress = (addr?: string | null): string =>
 // Main Functions:
 
 
-// Get swap data from api
+// // Get swap data from api
 // export const fetchSwapData = async (
 // 	_fromAddress: string | null = null,
 // 	_toAddress: string | null = null,
@@ -491,7 +491,8 @@ export const normalizeAddress = (addr?: string | null): string =>
 // 	}
 // };
 
-// Wrapper for fetching data to ensure accurate address write
+// //----------------------------------------
+// // Wrapper for fetching data to ensure accurate address write
 // export const crawlSwapData = async (
 // 	from?: string,
 // 	to?: string,
@@ -508,7 +509,9 @@ export const normalizeAddress = (addr?: string | null): string =>
 // 	return true; // Allow continue if multiple addresses. Exit to main.
 // };
 
-// Entry point
+//----------------------------------------
+// Entry Point
+
 async function main() {
 	const timerAnimation = (function () {
 		var P = ["[\\]", "[|]", "[/]", "[-]"];
