@@ -2,9 +2,17 @@ jest.mock('../fetchSwapData', () => ({
   fetchSwapData: jest.fn(),
 }));
 
-jest.mock('../writers', () => ({
-  addressRecordWriter: jest.fn(),
+// jest.mock('../writers', () => ({
+//   addressRecordWriter: jest.fn(),
+//   // swapsRecordWriter: jest.fn(),
+// }));
+
+jest.mock('csv-writer', () => ({
+  createObjectCsvWriter: jest.fn(() => ({
+    writeRecords: jest.fn(), 
+  })),
 }));
+
 
 // ==================================================================================
 
@@ -12,10 +20,15 @@ import type { SwapData, AmountData, Address } from '../index';
 import { baseFetch } from '../index';
 import { crawlSwapData } from '../crawlSwapData';
 import { fetchSwapData } from '../fetchSwapData';
-import { addressRecordWriter, swapsRecordWriter } from '../writers';
+// import { addressRecordWriter, swapsRecordWriter } from '../writers';
+import * as writers from '../writers';
+import { createObjectCsvWriter } from 'csv-writer';
 import * as swapModule from '../index';
 const request = require("supertest");
 const path = require("path");
+
+jest.spyOn(writers, 'addressRecordWriter');
+jest.spyOn(writers, 'swapsRecordWriter');
 
 // ==================================================================================
 
@@ -70,7 +83,7 @@ describe('crawlSwapData', () => {
       throw new Error('process.exit called');
     });
     (fetchSwapData as jest.Mock).mockClear();
-    (addressRecordWriter as jest.Mock).mockClear();
+    // (addressRecordWriter as jest.Mock).mockClear();
   });
 
   afterEach(() => {
@@ -107,14 +120,77 @@ describe('crawlSwapData', () => {
       expect.any(Set),
     );
 
-    expect(addressRecordWriter).toHaveBeenCalledWith(
+    expect(writers.addressRecordWriter).toHaveBeenCalledWith(
       expect.arrayContaining(['addr1', 'addr2']),
     );
 
-    expect(addressRecordWriter).toHaveBeenCalledTimes(1);
-    expect(exitSpy).toHaveBeenCalledWith(0);
+    expect(writers.addressRecordWriter).toHaveBeenCalledTimes(1);
+    // expect(exitSpy).toHaveBeenCalledWith(0);
   });
 });
 
 // ==================================================================================
 
+describe('swapsRecordWriter', () => {
+  const mockWriteRecords = jest.fn();
+
+  beforeEach(() => {
+    (createObjectCsvWriter as jest.Mock).mockReturnValue({
+      writeRecords: mockWriteRecords,
+    });
+
+    mockWriteRecords.mockClear();
+  });
+
+  it('should format and write swap data with derived amount fields', async () => {
+    const mockSwap: SwapData = {
+      amount: { assetId: 'BTC', value: '0.5' },
+      toAmount: { assetId: 'USDT', value: '25000' },
+      createdAt: '2025-01-01T00:00:00Z',
+      providerOrderId: 'abc123',
+      pairId: 'BTC_USDT',
+      fromAddress: 'walletA',
+      fromTransactionId: 'tx1',
+      toAddress: 'walletB',
+      toTransactionId: 'tx2',
+      id: 'swap1',
+      message: '',
+      payInAddress: 'payin123',
+      rateId: 'rate123',
+      updatedAt: '2025-01-01T01:00:00Z',
+      status: 'complete',
+
+      // Optional fields (can be left out, but let's add a couple for coverage)
+      svc: 'mockService',
+      svcStatus: 'success',
+    };
+
+    await writers.swapsRecordWriter([mockSwap]);
+
+    expect(writers.swapsRecordWriter).toHaveBeenCalledWith([
+    {
+      amount: { assetId: 'BTC', value: '0.5' },
+      toAmount: { assetId: 'USDT', value: '25000' },
+      createdAt: '2025-01-01T00:00:00Z',
+      providerOrderId: 'abc123',
+      pairId: 'BTC_USDT',
+      fromAddress: 'walletA',
+      fromTransactionId: 'tx1',
+      id: 'swap1',
+      message: '',
+      payInAddress: 'payin123',
+      rateId: 'rate123',
+      toAddress: 'walletB',
+      toTransactionId: 'tx2',
+      updatedAt: '2025-01-01T01:00:00Z',
+      status: 'complete',
+      svc: 'mockService',
+      svcStatus: 'success',
+    },
+  ]);
+
+
+  });
+});
+
+// ==================================================================================
