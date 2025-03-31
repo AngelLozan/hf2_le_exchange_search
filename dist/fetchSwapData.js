@@ -34,7 +34,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         addresses.push((0, index_1.normalizeAddress)(_toAddress));
     if (_toCurrency === null && _toAddress !== null) {
         const toCoin = yield Search(_toAddress);
-        if (typeof toCoin !== 'string') {
+        if (typeof toCoin === 'object') {
             console.log("===> Checking all EVM assets for TO asset");
             for (const tC of toCoin) {
                 toCurrency.push(tC.toUpperCase());
@@ -51,7 +51,7 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     }
     if (_fromCurrency === null && _fromAddress !== null) {
         const fromCoin = yield Search(_fromAddress);
-        if (typeof fromCoin !== 'string') {
+        if (typeof fromCoin === 'object') {
             console.log("===> Checking all EVM assets for FROM asset");
             for (const fC of fromCoin) {
                 fromCurrency.push(fC.toUpperCase());

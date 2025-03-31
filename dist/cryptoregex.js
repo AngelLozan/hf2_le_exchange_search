@@ -8,6 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Search = void 0;
 const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
     const source = _address;
     if (source === null || source === undefined || !source) {
@@ -80,6 +82,7 @@ const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
         return "Not Found";
     }
 });
+exports.Search = Search;
 const evmFetch = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield fetch("https://exchange.exodus.io/v3/assets", {
@@ -106,5 +109,4 @@ const evmFetch = () => __awaiter(void 0, void 0, void 0, function* () {
         return null;
     }
 });
-module.exports = { Search };
 //# sourceMappingURL=cryptoregex.js.map

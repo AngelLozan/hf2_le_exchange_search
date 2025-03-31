@@ -46,7 +46,7 @@ export const fetchSwapData = async (
 	if (_toCurrency === null && _toAddress !== null) {
 		const toCoin = await Search(_toAddress);
 
-		if (typeof toCoin !== 'string') {
+		if (typeof toCoin === 'object') {
 			console.log("===> Checking all EVM assets for TO asset");
 			for (const tC of toCoin) {
 				toCurrency.push(tC.toUpperCase());
@@ -62,7 +62,7 @@ export const fetchSwapData = async (
 	if (_fromCurrency === null && _fromAddress !== null) {
 		const fromCoin = await Search(_fromAddress);
 
-		if (typeof fromCoin !== 'string') {
+		if (typeof fromCoin === 'object') {
 			console.log("===> Checking all EVM assets for FROM asset");
 			for (const fC of fromCoin) {
 				fromCurrency.push(fC.toUpperCase());

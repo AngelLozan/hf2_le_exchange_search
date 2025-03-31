@@ -2,24 +2,25 @@ jest.mock('../fetchSwapData', () => ({
   fetchSwapData: jest.fn(),
 }));
 
-// jest.mock('../writers', () => ({
-//   addressRecordWriter: jest.fn(),
-//   // swapsRecordWriter: jest.fn(),
-// }));
-
 jest.mock('csv-writer', () => ({
   createObjectCsvWriter: jest.fn(() => ({
     writeRecords: jest.fn(), 
   })),
 }));
 
+jest.mock('../cryptoregex', () => ({
+  Search: jest.fn(),
+}));
+
+
 
 // ==================================================================================
 
 import type { SwapData, AmountData, Address } from '../index';
-import { baseFetch } from '../index';
+import { baseFetch, normalizeAddress, throttleAll } from '../index';
 import { crawlSwapData } from '../crawlSwapData';
 import { fetchSwapData } from '../fetchSwapData';
+import { Search } from '../cryptoregex';
 // import { addressRecordWriter, swapsRecordWriter } from '../writers';
 import * as writers from '../writers';
 import { createObjectCsvWriter } from 'csv-writer';
@@ -194,3 +195,6 @@ describe('swapsRecordWriter', () => {
 });
 
 // ==================================================================================
+
+
+

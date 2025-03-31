@@ -50,6 +50,9 @@ jest.mock('csv-writer', () => ({
         writeRecords: jest.fn(),
     })),
 }));
+jest.mock('../cryptoregex', () => ({
+    Search: jest.fn(),
+}));
 const index_1 = require("../index");
 const crawlSwapData_1 = require("../crawlSwapData");
 const fetchSwapData_1 = require("../fetchSwapData");

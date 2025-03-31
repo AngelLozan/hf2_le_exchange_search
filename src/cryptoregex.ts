@@ -6,7 +6,7 @@ type Asset = {
 };
 
 
-const Search = async (_address: string) => {
+export const Search = async (_address: string) => {
     const source = _address;
 
     if (source === null || source === undefined || !source) {
@@ -135,6 +135,6 @@ const evmFetch = async (): Promise<string[] | null> => {
     }
 };
 
-module.exports = { Search };
+// module.exports = { Search };
 
 
