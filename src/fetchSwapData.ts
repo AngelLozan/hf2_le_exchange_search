@@ -1,7 +1,7 @@
 import type { SwapData, Address } from './index';
 const { Search } = require("./cryptoregex");
 import { addressRecordWriter, swapsRecordWriter } from './writers';
-import { baseFetch, normalizeAddress, throttleAll } from './index';
+import { baseFetch, throttleAll } from './index';
 import pino from "pino";
 const logger = pino();
 
@@ -27,14 +27,14 @@ export const fetchSwapData = async (
 
 	if (
 		_fromAddress !== null &&
-		!addresses.includes(normalizeAddress(_fromAddress))
+		!addresses.includes(_fromAddress)
 	)
-		addresses.push(normalizeAddress(_fromAddress));
+		addresses.push(_fromAddress);
 	if (
 		_toAddress !== null &&
-		!addresses.includes(normalizeAddress(_toAddress))
+		!addresses.includes(_toAddress)
 	)
-		addresses.push(normalizeAddress(_toAddress));
+		addresses.push(_toAddress);
 	
 	// If no toAddress (singular address provided), use fromAddress as toAddress also. 
 	if (_toAddress == null) {
@@ -127,15 +127,33 @@ export const fetchSwapData = async (
 			});
 		}
 
+		console.log(`\n\n ======> Number of requests to be made: ${requests.length} \n\n`);
+
 		// const responses = await Promise.all(requests);
 		
 		// Throttling with limited concurrency and delays
 
-		const responses = await throttleAll(
-		  requests.map((r) => () => r),
-		  6,      // concurrency: 6 at a time
-		  50     // delay: 50ms between starts
-		);
+		const wrappedRequests = requests.map((r, i) => {
+		  return async () => {
+		    console.log(`🚀 Starting request [${i + 1}/${requests.length}]`);
+		    try {
+		      const res = await r;
+		      console.log(`✅ Request [${i + 1}] completed with status: ${res?.status}`);
+		      return res;
+		    } catch (error) {
+		      console.error(`❌ Request [${i + 1}] failed:`, error);
+		      return null;
+		    }
+		  };
+		});
+
+		const responses = await throttleAll(wrappedRequests, 6, 100);
+
+		// const responses = await throttleAll(
+		//   requests.map((r) => () => r),
+		//   6,      // concurrency: 6 at a time
+		//   50     // delay: 50ms between starts
+		// );
 
 		const dataArrays = await Promise.all(
 			responses.map(async (res) => {
@@ -159,6 +177,10 @@ export const fetchSwapData = async (
 			`\n\n ====> Fetched ${dataArrays.flat().length} swaps \n\n`,
 		);
 
+		console.log(
+			`\n======================\n\n ====> SWAPS: \n ${JSON.stringify(dataArrays.flat(), null, 2)} \n\n=================================\n`,
+		);
+
 		/* 
 			Organize swap data pulled and filter for unique.
 			Array of unique SwapData objects based on the oid field.
@@ -177,6 +199,8 @@ export const fetchSwapData = async (
 			}, {} as Record<string, SwapData>),
 		);
 
+		console.log(`\n\n =======> Merged Data length: ${mergedData.length}\n\n`);
+
 		// Add SVC to swap data
 		await Promise.all(
 		  mergedData.map(async (swap) => {
@@ -192,10 +216,17 @@ export const fetchSwapData = async (
 		  })
 		);
 
-		// console.log("Merged data:", JSON.stringify(mergedData, null, 2));
+		console.log(`\n\n =====> Seen swaps: \n ${JSON.stringify(seenSwaps, null, 2)} \n\n`);
+		console.log(`\n\n =====> New Swaps: \n ${JSON.stringify(mergedData, null, 2)} \n\n`);
+
+
+
+		// Filter unique swaps based on swaps already seen based on the provider order id
 		const uniqueSwaps = mergedData.filter(
 		  (data) => !seenSwaps.has(data.providerOrderId)
 		);
+
+		console.log(`\n\n =====> Filtered swaps again:\n${JSON.stringify(uniqueSwaps, null, 2)}\n\n`);
 
 		// Exit loop into the crawl swap data which exits to main. 
 		if (uniqueSwaps.length === 0) {
@@ -206,7 +237,7 @@ export const fetchSwapData = async (
 		uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
 
 		// Add swap data to sheet 2
-		console.log(`n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
+		console.log(`\n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
 		await swapsRecordWriter(uniqueSwaps);
 
 
@@ -219,10 +250,10 @@ export const fetchSwapData = async (
 		*/
 
 		for (const data of uniqueSwaps) {
-			const normalizedFrom = normalizeAddress(data.fromAddress);
-			const normalizedTo = normalizeAddress(data.toAddress);
+			// const normalizedFrom = normalizeAddress(data.fromAddress);
+			// const normalizedTo = normalizeAddress(data.toAddress);
 
-			const newAddresses = [normalizedFrom, normalizedTo];
+			const newAddresses = [data.fromAddress, data.toAddress];
 			const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
 
 			if (unseen.length === 0) {

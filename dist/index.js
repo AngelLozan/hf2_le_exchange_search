@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.normalizeAddress = exports.baseFetch = void 0;
+exports.baseFetch = void 0;
 exports.throttleAll = throttleAll;
 const csvWriter = require("csv-writer");
 const { Search } = require("./cryptoregex");
@@ -70,8 +70,6 @@ const baseFetch = (_url) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.baseFetch = baseFetch;
-const normalizeAddress = (addr) => typeof addr === 'string' ? addr.trim().toLowerCase() : '';
-exports.normalizeAddress = normalizeAddress;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const timerAnimation = (function () {
@@ -119,7 +117,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
                 })
                     .on("end", () => __awaiter(this, void 0, void 0, function* () {
                     console.log("addressesToProcess", addressesToProcess);
-                    console.log("\n\n ====> CSV file successfully processed");
+                    console.log("\n\n ====> CSV file successfully processed ✅");
                     for (const addr of addressesToProcess) {
                         console.log("\n\n ==> Searching address: ", addr);
                         yield (0, crawlSwapData_1.crawlSwapData)(addr);

@@ -2,7 +2,7 @@ jest.mock('../index', () => ({
   // ...jest.requireActual('../index'),
   baseFetch: jest.fn(),
   throttleAll: jest.fn(),
-  normalizeAddress: jest.fn((addr: string) => addr.toLowerCase()),
+  // normalizeAddress: jest.fn((addr: string) => addr.toLowerCase()),
 }));
 
 
@@ -21,7 +21,7 @@ jest.mock('../cryptoregex', () => ({
 // ==================================================================================
 
 import type { SwapData, AmountData, Address } from '../index';
-import { baseFetch, normalizeAddress, throttleAll } from '../index';
+import { baseFetch, throttleAll } from '../index';
 import { crawlSwapData } from '../crawlSwapData';
 import { fetchSwapData } from '../fetchSwapData';
 import { Search } from '../cryptoregex';

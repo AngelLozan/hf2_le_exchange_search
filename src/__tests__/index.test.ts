@@ -17,7 +17,7 @@ jest.mock('../cryptoregex', () => ({
 // ==================================================================================
 
 import type { SwapData, AmountData, Address } from '../index';
-import { baseFetch, normalizeAddress, throttleAll } from '../index';
+import { baseFetch, throttleAll } from '../index';
 import { crawlSwapData } from '../crawlSwapData';
 import { fetchSwapData } from '../fetchSwapData';
 import { Search } from '../cryptoregex';

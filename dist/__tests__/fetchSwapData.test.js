@@ -45,7 +45,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 jest.mock('../index', () => ({
     baseFetch: jest.fn(),
     throttleAll: jest.fn(),
-    normalizeAddress: jest.fn((addr) => addr.toLowerCase()),
 }));
 jest.mock('csv-writer', () => ({
     createObjectCsvWriter: jest.fn(() => ({
