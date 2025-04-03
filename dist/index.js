@@ -127,7 +127,7 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
                 }));
             }
             else {
-                yield (0, crawlSwapData_1.crawlSwapData)(_fromAddress || undefined, _toAddress || undefined, _toCurrency || undefined, _fromCurrency || undefined);
+                yield (0, crawlSwapData_1.crawlSwapData)(_fromAddress || null, _toAddress || null, _toCurrency || null, _fromCurrency || null);
                 console.log("\n\n ====> ✅ All recursive searches completed.");
                 process.exit(0);
             }

@@ -88,7 +88,10 @@ describe('fetchSwapData', () => {
 	    seenSwaps
 	  );
 
-	  expect(result).toBe(true);
+		expect(Array.isArray(result)).toBe(true);
+	  expect(result).toHaveLength(2);
+	  // expect(result[0]).toBeInstanceOf(Array); // addresses
+	  // expect(result[1]).toBeInstanceOf(Set);   // seenSwaps
 	  expect(baseFetch).toHaveBeenCalled();
 	  expect(writers.swapsRecordWriter).toHaveBeenCalledWith([
 	    expect.objectContaining({

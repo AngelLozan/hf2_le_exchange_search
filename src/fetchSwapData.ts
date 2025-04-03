@@ -14,7 +14,7 @@ export const fetchSwapData = async (
 	_fromCurrency: string | null = null,
 	addresses: Address[],
 	seenSwaps: Set<string>
-) => {
+): Promise<[string[], Set<string>]> => {
 	const baseUrl =
 		process.env.NODE_ENV === 'test'
 			? 'https://exchange-s.exodus.io/v3/orders' // Dev for test
@@ -23,18 +23,6 @@ export const fetchSwapData = async (
 	const providerDataUrl = 'https://exchange.exodus.io/v3/provider-orders';
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
-
-
-	if (
-		_fromAddress !== null &&
-		!addresses.includes(_fromAddress)
-	)
-		addresses.push(_fromAddress);
-	if (
-		_toAddress !== null &&
-		!addresses.includes(_toAddress)
-	)
-		addresses.push(_toAddress);
 	
 	// If no toAddress (singular address provided), use fromAddress as toAddress also. 
 	if (_toAddress == null) {
@@ -110,20 +98,40 @@ export const fetchSwapData = async (
 			//Handle multiple currencies with multiple requests
 			toCurrency.forEach((tCoin) => {
 				if (tCoin !== "Not Found")
-					requests.push(
-						baseFetch(
-							`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`,
-						),
-					);
+					if(_toAddress !== '' && _toAddress !== null){
+						requests.push(
+							baseFetch(
+								`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`,
+							),
+						);
+					} 
+					// else if(_fromAddress !== '' && _fromAddress !== null){
+					// 	requests.push(
+					// 		baseFetch(
+					// 			`${baseUrl}?toAddress=${_fromAddress}&toAsset=${tCoin}`,
+					// 		),
+					// 	);
+					// }
+					
 			});
 
 			fromCurrency.forEach((fCoin) => {
 				if (fCoin !== "Not Found")
-					requests.push(
-						baseFetch(
-							`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`,
-						),
-					);
+					if(_fromAddress !== '' && _fromAddress !== null){
+						requests.push(
+							baseFetch(
+								`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`,
+							),
+						);
+					} 
+					// else if(_toAddress !== '' && _toAddress !== null) {
+					// 	requests.push(
+					// 		baseFetch(
+					// 			`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`,
+					// 		),
+					// 	);
+					// }
+					
 			});
 		}
 
@@ -199,7 +207,8 @@ export const fetchSwapData = async (
 			}, {} as Record<string, SwapData>),
 		);
 
-		console.log(`\n\n =======> Merged Data length: ${mergedData.length}\n\n`);
+		console.log(`\n\n =======> Merged Data length (swaps removing duplicates by providerOrderId): ${mergedData.length}\n\n`);
+		console.log(`\n\n =====> Merged Data: \n ${JSON.stringify(mergedData, null, 2)} \n\n`);
 
 		// Add SVC to swap data
 		await Promise.all(
@@ -216,28 +225,30 @@ export const fetchSwapData = async (
 		  })
 		);
 
-		console.log(`\n\n =====> Seen swaps: \n ${JSON.stringify(seenSwaps, null, 2)} \n\n`);
-		console.log(`\n\n =====> New Swaps: \n ${JSON.stringify(mergedData, null, 2)} \n\n`);
-
-
+		console.log(`\n\n =====> Seen swaps length: \n ${seenSwaps.size} \n\n`);
+		console.log('\n\n ====> Seen Swaps:', [...seenSwaps], '\n\n');
+		
 
 		// Filter unique swaps based on swaps already seen based on the provider order id
 		const uniqueSwaps = mergedData.filter(
 		  (data) => !seenSwaps.has(data.providerOrderId)
 		);
 
-		console.log(`\n\n =====> Filtered swaps again:\n${JSON.stringify(uniqueSwaps, null, 2)}\n\n`);
+		console.log(`\n\n =====> Unique swaps length (mergedData - seenSwaps with same oid):\n${uniqueSwaps.length}\n\n`);
+		console.log(`\n\n =====> Unique swaps:\n${JSON.stringify(uniqueSwaps, null, 2)}\n\n`);
 
 		// Exit loop into the crawl swap data which exits to main. 
 		if (uniqueSwaps.length === 0) {
 		  console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
-		  return true;
+		  return [addresses, seenSwaps] as const;
 		} 
 
 		uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
 
+		console.log(`\n\n =====> Seen swaps after adding unique swaps: \n ${seenSwaps.size} \n\n`);
+
 		// Add swap data to sheet 2
-		console.log(`\n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
+		console.log(`\n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length} \n\n`);
 		await swapsRecordWriter(uniqueSwaps);
 
 
@@ -249,6 +260,7 @@ export const fetchSwapData = async (
 			Get more data for each unique address if any. 
 		*/
 
+		console.log("\n ================================================ \n Iterating through all unique swaps \n ================================================ \n");
 		for (const data of uniqueSwaps) {
 			// const normalizedFrom = normalizeAddress(data.fromAddress);
 			// const normalizedTo = normalizeAddress(data.toAddress);
@@ -257,13 +269,14 @@ export const fetchSwapData = async (
 			const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
 
 			if (unseen.length === 0) {
+				console.log("\n\n ====> No unique addresses found. \n\n");
 				continue; // Exit to uniqueSwaps loop
 			}
 
 			// Add all unseen addresses
 			unseen.forEach((addr) => addresses.push(addr));
 
-			console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`); 
+			console.log(`====> 🆕 New addresses discovered: ${unseen.join(", ")} \n`); 
 
 			// Recusion
 			await fetchSwapData(
@@ -276,8 +289,9 @@ export const fetchSwapData = async (
 			);
 		}
 
-		console.log("\n\n Unique Addresses: ", addresses.length);
-		return true; // Exit to crawlSwapData which exits to main.
+		console.log("\n\n ====> Unique Addresses: ", addresses.length);
+		// return true; // Exit to crawlSwapData which exits to main.
+		return [addresses, seenSwaps] as const; // Exit to crawlSwapData which exits to main.
 	} catch (error: any) {
 		console.log("====> Something went wrong with that call", error.message);
 		logger.info(error);

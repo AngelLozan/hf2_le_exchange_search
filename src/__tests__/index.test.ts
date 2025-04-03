@@ -92,19 +92,18 @@ describe('crawlSwapData', () => {
   });
 
   it('should call fetchSwapData and addressRecordWriter with deduplicated addresses', async () => {
-    (fetchSwapData as jest.Mock).mockImplementation(
-      async (
-        from: string,
-        to: string,
-        toAsset: string,
-        fromAsset: string,
-        addresses: string[],
-        seenSwaps: Set<string>,
-      ) => {
-        addresses.push('addr1', 'addr2', 'addr1');
-        seenSwaps.add('swap1');
-      },
-    );
+     (fetchSwapData as jest.Mock).mockImplementation(
+        async (
+          from: string,
+          to: string,
+          toAsset: string,
+          fromAsset: string,
+          addresses: string[],
+          seenSwaps: Set<string>,
+        ) => {
+          return [['addr1', 'addr2', 'addr1'], new Set(['swap1'])];
+        }
+      );
 
     try {
       await crawlSwapData('walletA', 'walletB', 'USDT', 'BTC');

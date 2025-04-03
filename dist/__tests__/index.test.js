@@ -106,8 +106,7 @@ describe('crawlSwapData', () => {
     });
     it('should call fetchSwapData and addressRecordWriter with deduplicated addresses', () => __awaiter(void 0, void 0, void 0, function* () {
         fetchSwapData_1.fetchSwapData.mockImplementation((from, to, toAsset, fromAsset, addresses, seenSwaps) => __awaiter(void 0, void 0, void 0, function* () {
-            addresses.push('addr1', 'addr2', 'addr1');
-            seenSwaps.add('swap1');
+            return [['addr1', 'addr2', 'addr1'], new Set(['swap1'])];
         }));
         try {
             yield (0, crawlSwapData_1.crawlSwapData)('walletA', 'walletB', 'USDT', 'BTC');

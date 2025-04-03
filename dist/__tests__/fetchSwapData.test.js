@@ -93,7 +93,8 @@ describe('fetchSwapData', () => {
         const addresses = [];
         const seenSwaps = new Set();
         const result = yield (0, fetchSwapData_1.fetchSwapData)('ADDR1', 'ADDR2', null, null, addresses, seenSwaps);
-        expect(result).toBe(true);
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toHaveLength(2);
         expect(index_1.baseFetch).toHaveBeenCalled();
         expect(writers.swapsRecordWriter).toHaveBeenCalledWith([
             expect.objectContaining({

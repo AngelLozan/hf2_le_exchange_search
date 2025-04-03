@@ -26,12 +26,6 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     const providerDataUrl = 'https://exchange.exodus.io/v3/provider-orders';
     let toCurrency = [];
     let fromCurrency = [];
-    if (_fromAddress !== null &&
-        !addresses.includes(_fromAddress))
-        addresses.push(_fromAddress);
-    if (_toAddress !== null &&
-        !addresses.includes(_toAddress))
-        addresses.push(_toAddress);
     if (_toAddress == null) {
         _toAddress = _fromAddress;
     }
@@ -82,11 +76,15 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         else {
             toCurrency.forEach((tCoin) => {
                 if (tCoin !== "Not Found")
-                    requests.push((0, index_1.baseFetch)(`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`));
+                    if (_toAddress !== '' && _toAddress !== null) {
+                        requests.push((0, index_1.baseFetch)(`${baseUrl}?toAddress=${_toAddress}&toAsset=${tCoin}`));
+                    }
             });
             fromCurrency.forEach((fCoin) => {
                 if (fCoin !== "Not Found")
-                    requests.push((0, index_1.baseFetch)(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
+                    if (_fromAddress !== '' && _fromAddress !== null) {
+                        requests.push((0, index_1.baseFetch)(`${baseUrl}?fromAddress=${_fromAddress}&fromAsset=${fCoin}`));
+                    }
             });
         }
         console.log(`\n\n ======> Number of requests to be made: ${requests.length} \n\n`);
@@ -122,7 +120,8 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
             acc[item.providerOrderId] = item;
             return acc;
         }, {}));
-        console.log(`\n\n =======> Merged Data length: ${mergedData.length}\n\n`);
+        console.log(`\n\n =======> Merged Data length (swaps removing duplicates by providerOrderId): ${mergedData.length}\n\n`);
+        console.log(`\n\n =====> Merged Data: \n ${JSON.stringify(mergedData, null, 2)} \n\n`);
         yield Promise.all(mergedData.map((swap) => __awaiter(void 0, void 0, void 0, function* () {
             const providerOrderId = swap.providerOrderId;
             const svcRes = yield (0, index_1.baseFetch)(`${providerDataUrl}/${providerOrderId}`);
@@ -134,29 +133,33 @@ const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
                 swap.svc = 'Not Found';
             }
         })));
-        console.log(`\n\n =====> Seen swaps: \n ${JSON.stringify(seenSwaps, null, 2)} \n\n`);
-        console.log(`\n\n =====> New Swaps: \n ${JSON.stringify(mergedData, null, 2)} \n\n`);
+        console.log(`\n\n =====> Seen swaps length: \n ${seenSwaps.size} \n\n`);
+        console.log('\n\n ====> Seen Swaps:', [...seenSwaps], '\n\n');
         const uniqueSwaps = mergedData.filter((data) => !seenSwaps.has(data.providerOrderId));
-        console.log(`\n\n =====> Filtered swaps again:\n${JSON.stringify(uniqueSwaps, null, 2)}\n\n`);
+        console.log(`\n\n =====> Unique swaps length (mergedData - seenSwaps with same oid):\n${uniqueSwaps.length}\n\n`);
+        console.log(`\n\n =====> Unique swaps:\n${JSON.stringify(uniqueSwaps, null, 2)}\n\n`);
         if (uniqueSwaps.length === 0) {
             console.log("\n\n ===> No new swaps found. Checking for more swaps from new address, if any ...\n\n ========================================================== \n");
-            return true;
+            return [addresses, seenSwaps];
         }
         uniqueSwaps.forEach((data) => seenSwaps.add(data.providerOrderId));
-        console.log(`\n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length}`);
+        console.log(`\n\n =====> Seen swaps after adding unique swaps: \n ${seenSwaps.size} \n\n`);
+        console.log(`\n\n ====> Writing merged data to sheet, records: ${uniqueSwaps.length} \n\n`);
         yield (0, writers_1.swapsRecordWriter)(uniqueSwaps);
+        console.log("\n ================================================ \n Iterating through all unique swaps \n ================================================ \n");
         for (const data of uniqueSwaps) {
             const newAddresses = [data.fromAddress, data.toAddress];
             const unseen = newAddresses.filter((addr) => !addresses.includes(addr));
             if (unseen.length === 0) {
+                console.log("\n\n ====> No unique addresses found. \n\n");
                 continue;
             }
             unseen.forEach((addr) => addresses.push(addr));
-            console.log(`====> New addresses discovered: ${unseen.join(", ")} \n`);
+            console.log(`====> 🆕 New addresses discovered: ${unseen.join(", ")} \n`);
             yield (0, exports.fetchSwapData)(data.fromAddress || null, data.toAddress || null, ((_a = data.toAmount) === null || _a === void 0 ? void 0 : _a.assetId) || null, ((_b = data.amount) === null || _b === void 0 ? void 0 : _b.assetId) || null, addresses, seenSwaps);
         }
-        console.log("\n\n Unique Addresses: ", addresses.length);
-        return true;
+        console.log("\n\n ====> Unique Addresses: ", addresses.length);
+        return [addresses, seenSwaps];
     }
     catch (error) {
         console.log("====> Something went wrong with that call", error.message);

@@ -241,10 +241,10 @@ npm run hf2_le_exchange_search <fromAddress> <toAddress> <toCurrency> <fromCurre
 		} else {
 			// Singular address
 			await crawlSwapData(
-				_fromAddress || undefined,
-				_toAddress || undefined,
-				_toCurrency || undefined,
-				_fromCurrency || undefined,
+				_fromAddress || null,
+				_toAddress || null,
+				_toCurrency || null,
+				_fromCurrency || null,
 			);
 
 			console.log("\n\n ====> ✅ All recursive searches completed.");
