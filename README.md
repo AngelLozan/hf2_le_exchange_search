@@ -18,7 +18,17 @@ https://exchange.exodus.io/v3/orders?fromAddress=addr1q84x3qh7e0q6fldmj5mnk89vjl
 
 ```curl
 
-curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Firefox/81.0" --location 'https://exchange.exodus.io/v3/orders?toAddress=TWZ5fhmREyszAwyfFESHcBanMwY42LEiuP&toAsset=TRX' \
+curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Firefox/81.0" --location 'https://exchange.exodus.io/v3/orders?toAddress=0x4ccb05Ac5aB486fBB39DBC10e70fFF039147e089&toAsset=JASMYethereum2C1E076B' \
+--header 'App-Name: hf2_le_exchange_search' \
+--header 'App-Version: 1.0.0' | fx .
+```
+
+
+List all assets: 
+
+```curl
+
+curl --user-agent "Mozilla/5.0 (X11; Linux x86\_64; rv:60.0) Gecko/20100101 Firefox/81.0" --location 'https://exchange.exodus.io/v3/assets' \
 --header 'App-Name: hf2_le_exchange_search' \
 --header 'App-Version: 1.0.0' | fx .
 ```

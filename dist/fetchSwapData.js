@@ -18,6 +18,19 @@ const writers_1 = require("./writers");
 const index_1 = require("./index");
 const pino_1 = __importDefault(require("pino"));
 const logger = (0, pino_1.default)();
+const readline = require('readline');
+function waitForEnter(promptText = 'Press Enter to continue...') {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    return new Promise((resolve) => {
+        rl.question(promptText, () => {
+            rl.close();
+            resolve();
+        });
+    });
+}
 const fetchSwapData = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (_fromAddress = null, _toAddress = null, _toCurrency = null, _fromCurrency = null, addresses, seenSwaps) {
     var _a, _b;
     const baseUrl = process.env.NODE_ENV === 'test'

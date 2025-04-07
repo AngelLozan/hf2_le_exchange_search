@@ -21,6 +21,7 @@ export const Search = async (_address: string) => {
         //@dev EVM address
         try{
             let assets: string[] | null = await evmFetch();
+            console.log(`\n\n ======= \n Assets: \n ${assets} \n ========== \n\n`);
             return assets;
         } catch(e:any){
             return "Not Found"
@@ -125,7 +126,7 @@ const evmFetch = async (): Promise<string[] | null> => {
         // TO DO: Filter for EVM assets.
         // Ex: Returns the `symbol` of all assets:
         const assets: string[] = (data as Asset[])
-            .filter((asset: any) => asset.meta?.contractAddress && /^0x[a-fA-F0-9]{40}$/g.test(asset.meta.contractAddress)) 
+            // .filter((asset: any) => asset.meta?.contractAddress && /^0x[a-fA-F0-9]{40}$/g.test(asset.meta.contractAddress)) 
             .map((asset: any) => asset.symbol);
         // console.log("\n\n Assets: ", assets);
         return assets;

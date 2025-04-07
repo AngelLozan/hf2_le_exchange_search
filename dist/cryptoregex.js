@@ -24,6 +24,7 @@ const Search = (_address) => __awaiter(void 0, void 0, void 0, function* () {
     else if (/^0x[a-fA-F0-9]{40}$/g.test(source)) {
         try {
             let assets = yield evmFetch();
+            console.log(`\n\n ======= \n Assets: \n ${assets} \n ========== \n\n`);
             return assets;
         }
         catch (e) {
@@ -100,7 +101,6 @@ const evmFetch = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         const data = yield response.json();
         const assets = data
-            .filter((asset) => { var _a; return ((_a = asset.meta) === null || _a === void 0 ? void 0 : _a.contractAddress) && /^0x[a-fA-F0-9]{40}$/g.test(asset.meta.contractAddress); })
             .map((asset) => asset.symbol);
         return assets;
     }

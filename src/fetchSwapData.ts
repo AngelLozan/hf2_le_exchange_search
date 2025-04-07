@@ -1,11 +1,24 @@
 import type { SwapData, Address } from './index';
 const { Search } = require("./cryptoregex");
-import { addressRecordWriter, swapsRecordWriter } from './writers';
+import { swapsRecordWriter } from './writers';
 import { baseFetch, throttleAll } from './index';
 import pino from "pino";
 const logger = pino();
+const readline = require('readline');
 
+function waitForEnter(promptText = 'Press Enter to continue...') {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
+  return new Promise<void>((resolve) => {
+    rl.question(promptText, () => {
+      rl.close();
+      resolve();
+    });
+  });
+}
 
 export const fetchSwapData = async (
 	_fromAddress: string | null = null,
@@ -23,6 +36,7 @@ export const fetchSwapData = async (
 	const providerDataUrl = 'https://exchange.exodus.io/v3/provider-orders';
 	let toCurrency: string[] = [];
 	let fromCurrency: string[] = [];
+	// let toAddress = _toAddress
 	
 	// If no toAddress (singular address provided), use fromAddress as toAddress also. 
 	if (_toAddress == null) {
@@ -188,6 +202,8 @@ export const fetchSwapData = async (
 		console.log(
 			`\n======================\n\n ====> SWAPS: \n ${JSON.stringify(dataArrays.flat(), null, 2)} \n\n=================================\n`,
 		);
+
+		// await waitForEnter(); // @dev You can pause here for debugging. 
 
 		/* 
 			Organize swap data pulled and filter for unique.
